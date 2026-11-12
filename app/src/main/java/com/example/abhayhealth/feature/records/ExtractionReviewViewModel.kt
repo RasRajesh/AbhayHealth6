@@ -50,6 +50,15 @@ class ExtractionReviewViewModel(
     private val _isExtracting = MutableStateFlow(false)
     val isExtracting: StateFlow<Boolean> = _isExtracting.asStateFlow()
 
+    private val _currentProcessingPage = MutableStateFlow(0)
+    val currentProcessingPage: StateFlow<Int> = _currentProcessingPage.asStateFlow()
+
+    private val _totalProcessingPages = MutableStateFlow(0)
+    val totalProcessingPages: StateFlow<Int> = _totalProcessingPages.asStateFlow()
+
+    private val _extractionStatusMessage = MutableStateFlow("Initializing text recognition...")
+    val extractionStatusMessage: StateFlow<String> = _extractionStatusMessage.asStateFlow()
+
     private val _hasExtractionFailed = MutableStateFlow(false)
     val hasExtractionFailed: StateFlow<Boolean> = _hasExtractionFailed.asStateFlow()
 
@@ -108,6 +117,9 @@ class ExtractionReviewViewModel(
         _parsedResults.value = emptyList()
         _parsedMedicines.value = emptyList()
         _isExtracting.value = false
+        _currentProcessingPage.value = 0
+        _totalProcessingPages.value = 0
+        _extractionStatusMessage.value = "Initializing text recognition..."
         _isSaving.value = false
         _errorMessage.value = null
         _infoMessage.value = null
@@ -242,10 +254,18 @@ class ExtractionReviewViewModel(
             _errorMessage.value = null
             _infoMessage.value = null
 
+            _currentProcessingPage.value = 0
+            _totalProcessingPages.value = 0
+            _extractionStatusMessage.value = "Analyzing multi-page document with text recognition..."
+
             try {
-                // 180 second watchdog so multi-page (10-16 page) OCR never aborts prematurely
-                val extraction = kotlinx.coroutines.withTimeoutOrNull(180_000L) {
-                    DocumentExtractionEngine.extractText(record)
+                // Generous 240 second watchdog for large multi-page documents
+                val extraction = kotlinx.coroutines.withTimeoutOrNull(240_000L) {
+                    DocumentExtractionEngine.extractText(record) { curPage, totalPages ->
+                        _currentProcessingPage.value = curPage
+                        _totalProcessingPages.value = totalPages
+                        _extractionStatusMessage.value = "Reading page $curPage of $totalPages with text recognition..."
+                    }
                 }
 
                 if (extraction == null) {
