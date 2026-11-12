@@ -177,65 +177,16 @@ fun ExtractionReviewScreen(
     }
 
     if (isExtracting) {
-        AlertDialog(
-            onDismissRequest = { viewModel.cancelExtraction() },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { viewModel.cancelExtraction() }) {
-                    Text("Cancel Extraction")
-                }
-            },
-            title = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.5.dp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = "Extracting Health Data...",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            },
-            text = {
-                val curPage by viewModel.currentProcessingPage.collectAsState()
-                val totalPages by viewModel.totalProcessingPages.collectAsState()
-                val statusMsg by viewModel.extractionStatusMessage.collectAsState()
+        val curPage by viewModel.currentProcessingPage.collectAsState()
+        val totalPages by viewModel.totalProcessingPages.collectAsState()
+        val statusMsg by viewModel.extractionStatusMessage.collectAsState()
 
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = if (totalPages > 1) {
-                            "Iterating through all pages of the document ($curPage of $totalPages)..."
-                        } else {
-                            "Analyzing report text, recognizing biomarker measurements, and extracting prescribed medicines. Please wait..."
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    if (totalPages > 1) {
-                        LinearProgressIndicator(
-                            progress = { if (totalPages > 0) curPage.toFloat() / totalPages else 0f },
-                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = statusMsg,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    } else {
-                        LinearProgressIndicator(
-                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
+        MultiPagePdfProgressDialog(
+            documentTitle = record?.title ?: title.ifBlank { "Laboratory Diagnostic Report" },
+            currentPage = curPage,
+            totalPages = totalPages,
+            statusMessage = statusMsg,
+            onCancel = { viewModel.cancelExtraction() }
         )
     }
 
