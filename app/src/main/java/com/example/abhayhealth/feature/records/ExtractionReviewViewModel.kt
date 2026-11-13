@@ -56,6 +56,12 @@ class ExtractionReviewViewModel(
     private val _totalProcessingPages = MutableStateFlow(0)
     val totalProcessingPages: StateFlow<Int> = _totalProcessingPages.asStateFlow()
 
+    private val _isMultiPagePdf = MutableStateFlow(false)
+    val isMultiPagePdf: StateFlow<Boolean> = _isMultiPagePdf.asStateFlow()
+
+    private val _currentPageIndex = MutableStateFlow(1)
+    val currentPageIndex: StateFlow<Int> = _currentPageIndex.asStateFlow()
+
     private val _extractionStatusMessage = MutableStateFlow("Initializing text recognition...")
     val extractionStatusMessage: StateFlow<String> = _extractionStatusMessage.asStateFlow()
 
@@ -141,6 +147,20 @@ class ExtractionReviewViewModel(
             }
 
             _selectedRecord.value = record
+            val path = record.localFilePath
+            if (!path.isNullOrBlank() && (path.endsWith(".pdf", ignoreCase = true) || record.mimeType?.contains("pdf", ignoreCase = true) == true)) {
+                val file = java.io.File(path)
+                if (file.exists()) {
+                    val count = withContext(dispatcherProvider.io) {
+                        DocumentExtractionEngine.getPdfPageCount(file)
+                    }
+                    _totalProcessingPages.value = count
+                    if (count > 1) {
+                        _isMultiPagePdf.value = true
+                    }
+                }
+            }
+
             val info = withContext(dispatcherProvider.io) {
                 medicalRecordRepository.getExtractedInfoSync(recordId, uid)
             }
@@ -150,15 +170,12 @@ class ExtractionReviewViewModel(
                 val deserialized = MedicalFieldParser.deserializeResults(info.structuredResultsJson)
                 val meds = MedicalFieldParser.parsePrescriptionMedicines(info.rawText, uid)
 
-                // If user has already reviewed the record or if it has valid extracted items, load them
                 if (info.reviewStatus != ExtractedMedicalInfo.STATUS_UNREVIEWED || deserialized.isNotEmpty() || meds.isNotEmpty()) {
                     _documentTitle.value = info.documentTitle
                     _reportDate.value = info.reportDate ?: ""
                     _parsedResults.value = deserialized
                     _parsedMedicines.value = meds
                 } else {
-                    // Stale empty extraction from a previous run:
-                    // If rawText already has valid medical content, parse it immediately without re-running heavy extraction
                     if (info.rawText.isNotBlank() && !info.rawText.startsWith("Failed") && !info.rawText.startsWith("No readable") && !info.rawText.startsWith("Could not")) {
                         val parsedAgain = MedicalFieldParser.parseTestResults(info.rawText)
                         val medsAgain = MedicalFieldParser.parsePrescriptionMedicines(info.rawText, uid)
@@ -171,11 +188,183 @@ class ExtractionReviewViewModel(
                         }
                     }
                     _documentTitle.value = info.documentTitle.ifBlank { record.title }
-                    runExtraction(record, force = true)
+                    if (_isMultiPagePdf.value) {
+                        extractPage(1)
+                    } else {
+                        runExtraction(record, force = true)
+                    }
                 }
             } else {
                 _documentTitle.value = record.title
-                runExtraction(record, force = false)
+                if (_isMultiPagePdf.value) {
+                    extractPage(1)
+                } else {
+                    runExtraction(record, force = false)
+                }
+            }
+        }
+    }
+
+    fun extractPage(pageNumber: Int) {
+        val record = _selectedRecord.value ?: return
+        val path = record.localFilePath ?: return
+        val file = java.io.File(path)
+        if (!file.exists()) return
+
+        val uid = getCurrentUid()
+        extractionJob?.cancel()
+        extractionJob = viewModelScope.launch(dispatcherProvider.main) {
+            _isExtracting.value = true
+            _hasExtractionFailed.value = false
+            _errorMessage.value = null
+
+            _currentProcessingPage.value = pageNumber
+            _currentPageIndex.value = pageNumber
+            val total = _totalProcessingPages.value.coerceAtLeast(1)
+            _extractionStatusMessage.value = "Extracting Page $pageNumber of $total..."
+
+            try {
+                val extraction = withContext(dispatcherProvider.io) {
+                    DocumentExtractionEngine.extractPdfPage(file, pageNumber - 1)
+                }
+
+                when (extraction) {
+                    is ExtractionResult.Success -> {
+                        val raw = extraction.rawText
+                        val title = MedicalFieldParser.parseDocumentTitle(raw, record.title)
+                        val date = MedicalFieldParser.parseReportDate(raw) ?: ""
+                        val results = MedicalFieldParser.parseTestResults(raw)
+                        val medicines = MedicalFieldParser.parsePrescriptionMedicines(raw, uid)
+
+                        _documentTitle.value = if (_documentTitle.value.isNotBlank()) _documentTitle.value else title
+                        if (date.isNotBlank() && _reportDate.value.isBlank()) _reportDate.value = date
+
+                        _parsedResults.value = results
+                        _parsedMedicines.value = medicines
+
+                        if (results.isEmpty() && medicines.isEmpty()) {
+                            _infoMessage.value = "Page $pageNumber of $total analyzed. No specific test fields found on this page. Review and tap 'Save & Next Page'."
+                        } else {
+                            _infoMessage.value = "Extracted ${results.size} field(s) & ${medicines.size} medicine(s) from Page $pageNumber of $total. Review and tap 'Save & Next Page'."
+                        }
+                    }
+                    is ExtractionResult.Error -> {
+                        _errorMessage.value = extraction.message
+                    }
+                }
+            } catch (t: Throwable) {
+                _errorMessage.value = "Failed Page $pageNumber extraction: ${t.localizedMessage}"
+            } finally {
+                _isExtracting.value = false
+            }
+        }
+    }
+
+    fun saveCurrentPageAndNext(context: Context? = null, onSuccess: () -> Unit) {
+        if (_isSaving.value) return
+
+        val uid = getCurrentUid()
+        val record = _selectedRecord.value ?: return
+        val isMulti = _isMultiPagePdf.value
+        val curPage = _currentPageIndex.value
+        val totalPages = _totalProcessingPages.value
+
+        viewModelScope.launch(dispatcherProvider.main) {
+            _isSaving.value = true
+            _errorMessage.value = null
+            _infoMessage.value = null
+
+            try {
+                val existing = _extractedInfo.value
+                val currentTitle = _documentTitle.value.trim().ifBlank { record.title }
+                val currentDate = _reportDate.value.trim()
+
+                val isFinalPage = !isMulti || curPage >= totalPages
+                val status = if (isFinalPage) ExtractedMedicalInfo.STATUS_REVIEWED_AND_SAVED else ExtractedMedicalInfo.STATUS_EDITED
+
+                val info = ExtractedMedicalInfo(
+                    recordId = record.id,
+                    accountUid = uid,
+                    rawText = existing?.rawText ?: "",
+                    documentTitle = currentTitle,
+                    reportDate = currentDate.ifBlank { null },
+                    structuredResultsJson = MedicalFieldParser.serializeResults(_parsedResults.value),
+                    reviewStatus = status,
+                    processedPages = curPage,
+                    updatedAtTimestamp = System.currentTimeMillis()
+                )
+
+                withContext(dispatcherProvider.io) {
+                    medicalRecordRepository.saveExtractedInfoWithTitleUpdate(info, info.documentTitle)
+                }
+
+                val dao = medicationDao
+                val medicines = _parsedMedicines.value
+                if (dao != null && medicines.isNotEmpty()) {
+                    withContext(dispatcherProvider.io) {
+                        val existingMeds = dao.getMedicationsByAccount(uid).first()
+                        medicines.forEach { med ->
+                            val existingMatch = existingMeds.firstOrNull {
+                                it.name.equals(med.name, ignoreCase = true) &&
+                                    it.timeSlot.equals(med.timeSlot, ignoreCase = true)
+                            }
+                            val updatedMed = if (existingMatch != null) {
+                                med.copy(id = existingMatch.id, accountUid = uid, isTaken = existingMatch.isTaken)
+                            } else {
+                                med.copy(accountUid = uid)
+                            }
+                            dao.insertOrUpdate(updatedMed)
+                            context?.let { ctx ->
+                                MedicationAlarmScheduler.scheduleMedicationAlarm(
+                                    context = ctx,
+                                    medicationId = updatedMed.id,
+                                    name = updatedMed.name,
+                                    dosage = updatedMed.dosage,
+                                    timeSlot = updatedMed.timeSlot
+                                )
+                            }
+                        }
+                    }
+                }
+
+                val reportTimestamp = MedicalFieldParser.parseDateToTimestamp(currentDate) ?: record.recordDate
+                val recordVitalNote = "Extracted from record #${record.id}"
+                val vitals = MedicalFieldParser.extractVitalsFromResults(_parsedResults.value, uid)
+                val vitalRepo = vitalReadingRepository
+                if (vitalRepo != null && vitals.isNotEmpty()) {
+                    withContext(dispatcherProvider.io) {
+                        val existingVitals = vitalRepo.getAllReadings(uid).first()
+                        vitals.forEach { vital ->
+                            val taggedVital = vital.copy(timestamp = reportTimestamp, notes = recordVitalNote)
+                            val alreadyExists = existingVitals.any {
+                                it.type == taggedVital.type &&
+                                    it.notes == recordVitalNote &&
+                                    it.systolic == taggedVital.systolic &&
+                                    it.diastolic == taggedVital.diastolic &&
+                                    it.weightKg == taggedVital.weightKg
+                            }
+                            if (!alreadyExists) {
+                                vitalRepo.insertReading(taggedVital)
+                            }
+                        }
+                    }
+                }
+
+                _extractedInfo.value = info
+                _isSaving.value = false
+
+                if (isMulti && curPage < totalPages) {
+                    val nextPage = curPage + 1
+                    _infoMessage.value = "Page $curPage saved! Loading Page $nextPage of $totalPages..."
+                    extractPage(nextPage)
+                } else {
+                    _infoMessage.value = "All pages reviewed and saved successfully!"
+                    onSuccess()
+                }
+
+            } catch (e: Exception) {
+                _isSaving.value = false
+                _errorMessage.value = "Failed to save page: ${e.localizedMessage ?: "Unknown error"}"
             }
         }
     }

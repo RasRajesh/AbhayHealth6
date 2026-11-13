@@ -202,18 +202,107 @@ object DocumentExtractionEngine {
         }
     }
 
-    private fun getPdfPageCount(file: File): Int? {
+    fun getPdfPageCount(file: File): Int {
         var pfd: ParcelFileDescriptor? = null
         var renderer: PdfRenderer? = null
         return try {
-            pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY) ?: return null
+            pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY) ?: return 1
             renderer = PdfRenderer(pfd)
             renderer.pageCount
         } catch (_: Throwable) {
-            null
+            1
         } finally {
             try { renderer?.close() } catch (_: Exception) {}
             try { pfd?.close() } catch (_: Exception) {}
+        }
+    }
+
+    suspend fun extractPdfPage(
+        file: File,
+        pageIndex: Int
+    ): ExtractionResult = withContext(Dispatchers.IO) {
+        var pfd: ParcelFileDescriptor? = null
+        var renderer: PdfRenderer? = null
+        var recognizer: TextRecognizer? = null
+
+        try {
+            pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+                ?: return@withContext ExtractionResult.Error("Unable to open PDF document.")
+
+            renderer = try {
+                PdfRenderer(pfd)
+            } catch (t: Throwable) {
+                val fallbackDirect = PdfTextExtractor.extractText(file)
+                if (!fallbackDirect.isNullOrBlank()) {
+                    return@withContext ExtractionResult.Success(rawText = fallbackDirect, pagesProcessed = 1)
+                }
+                return@withContext ExtractionResult.Error("Cannot render PDF page.")
+            }
+
+            val totalPages = renderer.pageCount
+            if (pageIndex < 0 || pageIndex >= totalPages) {
+                return@withContext ExtractionResult.Error("Page index $pageIndex out of range (Total: $totalPages).")
+            }
+
+            recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+            var pageText: String? = null
+
+            var page: PdfRenderer.Page? = null
+            var renderedBitmap: Bitmap? = null
+
+            try {
+                page = renderer.openPage(pageIndex)
+                val targetMaxDim = 1200
+                val currentMaxDim = maxOf(page.width, page.height)
+                val scale = if (currentMaxDim > 0) {
+                    (targetMaxDim.toFloat() / currentMaxDim).coerceIn(0.2f, 1.5f)
+                } else 1.0f
+                val width = (page.width * scale).toInt().coerceIn(100, targetMaxDim)
+                val height = (page.height * scale).toInt().coerceIn(100, targetMaxDim)
+
+                renderedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                renderedBitmap.eraseColor(android.graphics.Color.WHITE)
+
+                page.render(renderedBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                try { page.close() } catch (_: Exception) {}
+                page = null
+
+                val inputImage = InputImage.fromBitmap(renderedBitmap, 0)
+                val visionText = withTimeoutOrNull(20_000L) {
+                    recognizer.process(inputImage).await()
+                }
+                pageText = visionText?.text?.trim()
+            } catch (t: Throwable) {
+                SecurityAudit.logError("DocumentExtractionEngine", "Failed page $pageIndex extraction", t)
+            } finally {
+                try { page?.close() } catch (_: Exception) {}
+                try { renderedBitmap?.recycle() } catch (_: Exception) {}
+            }
+
+            var finalPageText = if (!pageText.isNullOrBlank()) {
+                "--- Page ${pageIndex + 1} of $totalPages ---\n$pageText"
+            } else ""
+
+            if (finalPageText.isBlank()) {
+                val direct = PdfTextExtractor.extractText(file)
+                if (!direct.isNullOrBlank()) {
+                    finalPageText = direct
+                }
+            }
+
+            if (finalPageText.isBlank()) {
+                ExtractionResult.Error("No readable text found on Page ${pageIndex + 1} of $totalPages.")
+            } else {
+                ExtractionResult.Success(
+                    rawText = finalPageText,
+                    pagesProcessed = 1,
+                    isPartial = pageIndex + 1 < totalPages
+                )
+            }
+        } finally {
+            try { renderer?.close() } catch (_: Exception) {}
+            try { pfd?.close() } catch (_: Exception) {}
+            try { recognizer?.close() } catch (_: Exception) {}
         }
     }
 
