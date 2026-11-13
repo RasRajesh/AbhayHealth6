@@ -26,9 +26,11 @@ data class PrescriptionMedication(
 class MedicinesViewModel(
     private val medicationDao: MedicationDao? = null,
     private val authRepository: AuthRepository? = null,
-    private val context: Context? = null,
+    context: Context? = null,
     private val dispatcherProvider: DispatcherProvider = DefaultDispatcherProvider()
 ) : ViewModel() {
+
+    private val appContext: Context? = context?.applicationContext
 
     private val _medications = MutableStateFlow<List<PrescriptionMedication>>(emptyList())
     val medications: StateFlow<List<PrescriptionMedication>> = _medications.asStateFlow()
@@ -45,7 +47,7 @@ class MedicinesViewModel(
     private var observeJob: Job? = null
 
     init {
-        context?.let { ctx ->
+        appContext?.let { ctx ->
             MedicationNotificationHelper.createNotificationChannel(ctx)
         }
         observeAuthState()
@@ -81,7 +83,7 @@ class MedicinesViewModel(
                 }
 
                 // Sync alarms with schedule
-                context?.let { ctx ->
+                appContext?.let { ctx ->
                     for (entity in list) {
                         MedicationAlarmScheduler.scheduleMedicationAlarm(
                             context = ctx,
@@ -122,7 +124,7 @@ class MedicinesViewModel(
             }
 
             // Immediately reschedule alarm for updated reminder time
-            context?.let { ctx ->
+            appContext?.let { ctx ->
                 MedicationAlarmScheduler.scheduleMedicationAlarm(
                     context = ctx,
                     medicationId = id,
@@ -164,7 +166,7 @@ class MedicinesViewModel(
             }
 
             // Immediately schedule alarm for this newly added medication
-            context?.let { ctx ->
+            appContext?.let { ctx ->
                 MedicationAlarmScheduler.scheduleMedicationAlarm(
                     context = ctx,
                     medicationId = entity.id,
@@ -194,7 +196,7 @@ class MedicinesViewModel(
         val dao = medicationDao ?: return
 
         // Cancel scheduled alarm when removed
-        context?.let { ctx ->
+        appContext?.let { ctx ->
             MedicationAlarmScheduler.cancelMedicationAlarm(ctx, id)
         }
 
@@ -206,7 +208,7 @@ class MedicinesViewModel(
     }
 
     fun triggerTestReminder(medicineName: String = "Paracetamol", dosage: String = "500 mg - 1 Tab") {
-        context?.let { ctx ->
+        appContext?.let { ctx ->
             MedicationNotificationHelper.showMedicationNotification(
                 context = ctx,
                 medicationId = "test_med_${System.currentTimeMillis()}",
@@ -218,7 +220,7 @@ class MedicinesViewModel(
     }
 
     fun rescheduleAllAlarms() {
-        context?.let { ctx ->
+        appContext?.let { ctx ->
             MedicationAlarmScheduler.rescheduleAllAlarms(ctx)
         }
     }

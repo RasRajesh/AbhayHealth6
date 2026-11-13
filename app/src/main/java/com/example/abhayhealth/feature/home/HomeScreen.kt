@@ -48,8 +48,8 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Medication
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.filled.Speed
@@ -544,7 +544,7 @@ fun HomeScreen(
                 onDismissRequest = { viewModel.dismissDialog() },
                 icon = {
                     Icon(
-                        imageVector = Icons.Default.ShowChart,
+                        imageVector = Icons.AutoMirrored.Filled.ShowChart,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -1208,7 +1208,7 @@ private fun AiHealthSummaryCard(
                     label = { Text(stringResource(id = R.string.home_ai_chip_explainer)) },
                     leadingIcon = {
                         Icon(
-                            imageVector = Icons.Default.ShowChart,
+                            imageVector = Icons.AutoMirrored.Filled.ShowChart,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
                             tint = MaterialTheme.colorScheme.secondary
@@ -1241,7 +1241,7 @@ private fun AiInsightRow(
         ) {
             val (icon, iconTint) = when (insight.category) {
                 AiInsightCategory.MEDICATION -> Pair(Icons.Default.Medication, MaterialTheme.colorScheme.primary)
-                AiInsightCategory.LAB_VITAL -> Pair(Icons.Default.ShowChart, MaterialTheme.colorScheme.tertiary)
+                AiInsightCategory.LAB_VITAL -> Pair(Icons.AutoMirrored.Filled.ShowChart, MaterialTheme.colorScheme.tertiary)
                 AiInsightCategory.ALLERGY_SAFETY -> Pair(Icons.Default.Shield, MaterialTheme.colorScheme.error)
                 AiInsightCategory.CARE_ADVICE -> Pair(Icons.Default.Favorite, MaterialTheme.colorScheme.secondary)
             }

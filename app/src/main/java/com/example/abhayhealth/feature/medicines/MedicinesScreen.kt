@@ -1045,6 +1045,7 @@ private fun MedicationRemindersDialog(
 
                 // Test Notification & Reschedule actions
                 item {
+                    val testSuccessMsg = stringResource(id = R.string.meds_reminders_test_success)
                     Spacer(modifier = Modifier.height(4.dp))
                     OutlinedButton(
                         onClick = {
@@ -1052,7 +1053,7 @@ private fun MedicationRemindersDialog(
                                 permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                             } else {
                                 onSendTestNotification()
-                                Toast.makeText(context, context.getString(R.string.meds_reminders_test_success), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, testSuccessMsg, Toast.LENGTH_SHORT).show()
                             }
                         },
                         modifier = Modifier.fillMaxWidth()
@@ -1064,10 +1065,11 @@ private fun MedicationRemindersDialog(
                 }
 
                 item {
+                    val syncSuccessMsg = stringResource(id = R.string.meds_reminders_sync_success)
                     OutlinedButton(
                         onClick = {
                             onRescheduleAll()
-                            Toast.makeText(context, context.getString(R.string.meds_reminders_sync_success), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, syncSuccessMsg, Toast.LENGTH_SHORT).show()
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {

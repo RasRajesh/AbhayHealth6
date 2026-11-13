@@ -18,9 +18,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import android.graphics.BitmapFactory
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -35,6 +39,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -46,10 +51,10 @@ import androidx.compose.material.icons.filled.Hearing
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Medication
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -86,12 +91,15 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.abhayhealth.R
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -109,6 +117,26 @@ fun AiAssistantScreen(
     val isProcessing by viewModel.isProcessing.collectAsState()
     val selectedReport by viewModel.selectedReport.collectAsState()
     val availableReports by viewModel.availableReports.collectAsState()
+    val showExportDialog by viewModel.showExportDialog.collectAsState()
+    val exportState by viewModel.exportState.collectAsState()
+    val exportStats by viewModel.exportStats.collectAsState()
+    val exportSavedMessage by viewModel.exportSavedMessage.collectAsState()
+
+    val context = LocalContext.current
+    val savedToastText = stringResource(id = R.string.ai_export_saved_toast)
+    val savePdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf")
+    ) { uri ->
+        if (uri != null) {
+            viewModel.exportAndSaveLabPdfToUri(uri)
+        }
+    }
+
+    LaunchedEffect(exportSavedMessage) {
+        if (!exportSavedMessage.isNullOrBlank()) {
+            Toast.makeText(context, savedToastText, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     val isTelugu = selectedLanguage == "Telugu"
     val listState = rememberLazyListState()
@@ -127,6 +155,19 @@ fun AiAssistantScreen(
         DocumentImagePreviewDialog(
             imagePath = expandedPreviewImagePath!!,
             onDismiss = { expandedPreviewImagePath = null }
+        )
+    }
+
+    if (showExportDialog) {
+        LabSummaryExportDialog(
+            state = exportState,
+            stats = exportStats,
+            savedMessage = exportSavedMessage,
+            onDismiss = { viewModel.dismissExportDialog() },
+            onShareClick = { viewModel.exportAndShareLabPdf() },
+            onSaveClick = { savePdfLauncher.launch(viewModel.suggestedLabPdfFileName()) },
+            onViewClick = { viewModel.exportAndViewLabPdf() },
+            onPrintClick = { viewModel.exportAndPrintLabPdf() }
         )
     }
 
@@ -173,14 +214,15 @@ fun AiAssistantScreen(
                 }
             }
 
-            // Executive Document Summary Card with Speaker Read-Out
+            // Executive Document Summary Card with Speaker Read-Out & PDF Export
             item {
                 ExecutiveDocumentSummaryCard(
                     summary = executiveSummary,
                     selectedReport = selectedReport,
                     isTelugu = isTelugu,
                     isSpeaking = isSpeaking && currentlySpeakingId == "summary",
-                    onToggleSpeak = { viewModel.speakExecutiveSummary() }
+                    onToggleSpeak = { viewModel.speakExecutiveSummary() },
+                    onExportPdfClick = { viewModel.openExportDialog() }
                 )
             }
 
@@ -830,6 +872,7 @@ private fun ExecutiveDocumentSummaryCard(
     isTelugu: Boolean,
     isSpeaking: Boolean,
     onToggleSpeak: () -> Unit,
+    onExportPdfClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val title = if (isTelugu) summary.titleTe else summary.title
@@ -924,7 +967,7 @@ private fun ExecutiveDocumentSummaryCard(
                     modifier = Modifier.testTag("summary_audio_speaker_btn")
                 ) {
                     Icon(
-                        imageVector = if (isSpeaking) Icons.Default.Stop else Icons.Default.VolumeUp,
+                        imageVector = if (isSpeaking) Icons.Default.Stop else Icons.AutoMirrored.Filled.VolumeUp,
                         contentDescription = "Speaker",
                         modifier = Modifier.size(16.dp)
                     )
@@ -981,6 +1024,32 @@ private fun ExecutiveDocumentSummaryCard(
                 color = MaterialTheme.colorScheme.onSurface,
                 lineHeight = 22.sp
             )
+
+            // Export Processed Lab Summary PDF Button
+            FilledTonalButton(
+                onClick = onExportPdfClick,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .testTag("ai_export_lab_pdf_button")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PictureAsPdf,
+                    contentDescription = stringResource(id = R.string.ai_export_pdf_btn),
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(id = R.string.ai_export_pdf_btn),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -1145,7 +1214,7 @@ private fun ChatMessageBubble(
                                             )
                                         } else {
                                             Icon(
-                                                imageVector = Icons.Default.VolumeUp,
+                                                imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                                                 contentDescription = "Speak Response",
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(14.dp)
