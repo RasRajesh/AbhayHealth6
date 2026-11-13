@@ -102,12 +102,15 @@ fun MedicalInfographicCard(
     )
 
     var selectedOrganSystem by remember { mutableStateOf(OrganSystem.ALL) }
-    val outOfRangeCount = remember(extractedBiomarkers) { extractedBiomarkers.count { it.isOutOfRange } }
-    val displayBiomarkers = remember(extractedBiomarkers, selectedOrganSystem) {
+    val outOfRangeBiomarkers = remember(extractedBiomarkers) {
+        extractedBiomarkers.filter { it.isOutOfRange }
+    }
+    val outOfRangeCount = outOfRangeBiomarkers.size
+    val displayBiomarkers = remember(outOfRangeBiomarkers, selectedOrganSystem) {
         if (selectedOrganSystem == OrganSystem.ALL) {
-            extractedBiomarkers
+            outOfRangeBiomarkers
         } else {
-            extractedBiomarkers.filter { it.organSystem == selectedOrganSystem }
+            outOfRangeBiomarkers.filter { it.organSystem == selectedOrganSystem }
         }
     }
 

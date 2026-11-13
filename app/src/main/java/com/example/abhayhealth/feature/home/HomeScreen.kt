@@ -1322,6 +1322,10 @@ private fun ExtractedInformationSection(
     biomarkers: List<ParsedMedicalResult>,
     modifier: Modifier = Modifier
 ) {
+    val outOfRangeBiomarkers = remember(biomarkers) {
+        biomarkers.filter { it.isOutOfRange }
+    }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -1350,7 +1354,7 @@ private fun ExtractedInformationSection(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Extracted Information",
+                        text = "Out-of-Range Clinical Parameters",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -1358,13 +1362,13 @@ private fun ExtractedInformationSection(
                 }
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer
+                    color = if (outOfRangeBiomarkers.isNotEmpty()) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer
                 ) {
                     Text(
-                        text = "${biomarkers.size} Extracted Markers",
+                        text = if (outOfRangeBiomarkers.isNotEmpty()) "${outOfRangeBiomarkers.size} Need Attention" else "All Normal ✓",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        color = if (outOfRangeBiomarkers.isNotEmpty()) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
@@ -1382,9 +1386,34 @@ private fun ExtractedInformationSection(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                biomarkers.forEach { biomarker ->
-                    ExtractedBiomarkerRow(biomarker = biomarker)
+            if (outOfRangeBiomarkers.isEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = if (biomarkers.isEmpty()) "No extracted biomarkers recorded yet." else "All ${biomarkers.size} extracted biomarkers are within normal reference range.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    outOfRangeBiomarkers.forEach { biomarker ->
+                        ExtractedBiomarkerRow(biomarker = biomarker)
+                    }
                 }
             }
         }
