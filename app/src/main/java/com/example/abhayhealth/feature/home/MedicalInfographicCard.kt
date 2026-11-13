@@ -73,14 +73,14 @@ import com.example.abhayhealth.R
  */
 @Composable
 fun MedicalInfographicCard(
+    modifier: Modifier = Modifier,
     bloodPressure: String = "120/80 mmHg",
     bloodSugar: String = "95 mg/dL",
     heartRate: String = "72 BPM",
     spO2: String = "98%",
     extractedBiomarkers: List<ParsedMedicalResult> = emptyList(),
     onMetricClick: (String, ParsedMedicalResult?) -> Unit = { _, _ -> },
-    onLogVitalClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onLogVitalClick: () -> Unit = {}
 ) {
 
     val darkSlateBg = Color(0xFF0F172A)

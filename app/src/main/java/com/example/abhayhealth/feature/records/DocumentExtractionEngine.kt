@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
+import androidx.exifinterface.media.ExifInterface
 import com.example.abhayhealth.core.security.SecurityAudit
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
@@ -255,14 +256,14 @@ object DocumentExtractionEngine {
 
             // Read EXIF orientation to ensure camera photos captured in portrait or landscape are not inverted
             val exif = try {
-                android.media.ExifInterface(file.absolutePath)
+                ExifInterface(file.absolutePath)
             } catch (_: Exception) {
                 null
             }
-            val rotationDegrees = when (exif?.getAttributeInt(android.media.ExifInterface.TAG_ORIENTATION, android.media.ExifInterface.ORIENTATION_NORMAL)) {
-                android.media.ExifInterface.ORIENTATION_ROTATE_90 -> 90
-                android.media.ExifInterface.ORIENTATION_ROTATE_180 -> 180
-                android.media.ExifInterface.ORIENTATION_ROTATE_270 -> 270
+            val rotationDegrees = when (exif?.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> 90
+                ExifInterface.ORIENTATION_ROTATE_180 -> 180
+                ExifInterface.ORIENTATION_ROTATE_270 -> 270
                 else -> 0
             }
 

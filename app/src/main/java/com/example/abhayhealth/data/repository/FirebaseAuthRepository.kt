@@ -2,6 +2,7 @@ package com.example.abhayhealth.data.repository
 
 import android.content.Context
 import android.app.Activity
+import androidx.core.content.edit
 import com.example.abhayhealth.core.security.SecurityAudit
 import com.example.abhayhealth.domain.model.AuthState
 import com.example.abhayhealth.domain.model.AuthUser
@@ -363,15 +364,15 @@ class FirebaseAuthRepository(
     }
 
     private fun saveUserSession(user: AuthUser) {
-        prefs.edit()
-            .putString("saved_uid", user.uid)
-            .putString("saved_phone", user.phoneNumber)
-            .putBoolean("is_authenticated", true)
-            .apply()
+        prefs.edit {
+            putString("saved_uid", user.uid)
+            putString("saved_phone", user.phoneNumber)
+            putBoolean("is_authenticated", true)
+        }
     }
 
     private fun clearUserSession() {
-        prefs.edit().clear().apply()
+        prefs.edit { clear() }
         _authenticatedUser = null
     }
 

@@ -3,6 +3,7 @@ package com.example.abhayhealth.feature.records.export
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import androidx.core.graphics.toColorInt
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
@@ -85,7 +86,7 @@ class MedicalReportPdfGenerator(private val context: Context) {
     }
 
     private val subtitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#E0F2FE")
+        color = "#E0F2FE".toColorInt()
         textSize = 8.5f
     }
 
@@ -400,18 +401,18 @@ class MedicalReportPdfGenerator(private val context: Context) {
             canvas.drawText("Scope: ${scopeTitle.take(44)}", MARGIN_LEFT + 56f, MARGIN_TOP + 58f, subtitlePaint)
 
             val badgeRect = RectF(MARGIN_RIGHT - 160f, MARGIN_TOP + 12f, MARGIN_RIGHT - 12f, MARGIN_TOP + 32f)
-            fillPaint.color = Color.parseColor("#1E293B")
+            fillPaint.color = "#1E293B".toColorInt()
             canvas.drawRoundRect(badgeRect, 4f, 4f, fillPaint)
 
             val badgeTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.parseColor("#FDE047")
+                color = "#FDE047".toColorInt()
                 textSize = 7.5f
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             }
             canvas.drawText("AI LAB SUMMARY REPORT", MARGIN_RIGHT - 148f, MARGIN_TOP + 25f, badgeTextPaint)
 
             val datePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.parseColor("#E2E8F0")
+                color = "#E2E8F0".toColorInt()
                 textSize = 7.5f
             }
             canvas.drawText("Generated: $generatedDateStr", MARGIN_RIGHT - 160f, MARGIN_TOP + 54f, datePaint)
@@ -489,7 +490,7 @@ class MedicalReportPdfGenerator(private val context: Context) {
         val cardHeight = 34f + metricsHeight + bodyHeight + 10f
 
         val rect = RectF(MARGIN_LEFT, yStart, MARGIN_RIGHT, yStart + cardHeight)
-        fillPaint.color = Color.parseColor("#F0FDFA")
+        fillPaint.color = "#F0FDFA".toColorInt()
         canvas.drawRoundRect(rect, 6f, 6f, fillPaint)
         canvas.drawRoundRect(rect, 6f, 6f, borderPaint)
 
@@ -546,7 +547,7 @@ class MedicalReportPdfGenerator(private val context: Context) {
         canvas.drawRoundRect(rect, 5f, 5f, borderPaint)
 
         val categoryRect = RectF(MARGIN_LEFT + 8f, yStart + 5f, MARGIN_LEFT + 86f, yStart + 21f)
-        fillPaint.color = Color.parseColor("#E0F2FE")
+        fillPaint.color = "#E0F2FE".toColorInt()
         canvas.drawRoundRect(categoryRect, 3f, 3f, fillPaint)
 
         val tagPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -569,7 +570,7 @@ class MedicalReportPdfGenerator(private val context: Context) {
 
     private fun drawLabBiomarkerTableHeader(canvas: Canvas, yStart: Float): Float {
         val rect = RectF(MARGIN_LEFT, yStart, MARGIN_RIGHT, yStart + 18f)
-        fillPaint.color = Color.parseColor("#E2E8F0")
+        fillPaint.color = "#E2E8F0".toColorInt()
         canvas.drawRoundRect(rect, 4f, 4f, fillPaint)
 
         val headerTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -607,17 +608,17 @@ class MedicalReportPdfGenerator(private val context: Context) {
         val (statusLabel, statusBg, statusFg) = when {
             marker.status.name.contains("CRITICAL") -> Triple(
                 "CRITICAL",
-                Color.parseColor("#FEE2E2"),
+                "#FEE2E2".toColorInt(),
                 COLOR_ACCENT_RED
             )
             marker.isOutOfRange -> Triple(
                 marker.status.name.take(8),
-                Color.parseColor("#FEF3C7"),
-                Color.parseColor("#B45309")
+                "#FEF3C7".toColorInt(),
+                "#B45309".toColorInt()
             )
             else -> Triple(
                 "NORMAL",
-                Color.parseColor("#DCFCE7"),
+                "#DCFCE7".toColorInt(),
                 COLOR_ACCENT_GREEN
             )
         }
@@ -687,18 +688,18 @@ class MedicalReportPdfGenerator(private val context: Context) {
 
             // Generated date & confidentiality badge on right side
             val badgeRect = RectF(MARGIN_RIGHT - 165f, MARGIN_TOP + 12f, MARGIN_RIGHT - 12f, MARGIN_TOP + 32f)
-            fillPaint.color = Color.parseColor("#1E293B")
+            fillPaint.color = "#1E293B".toColorInt()
             canvas.drawRoundRect(badgeRect, 4f, 4f, fillPaint)
 
             val badgeTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.parseColor("#FDE047") // Yellow gold
+                color = "#FDE047".toColorInt() // Yellow gold
                 textSize = 7.5f
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             }
             canvas.drawText("CONFIDENTIAL MEDICAL SUMMARY", MARGIN_RIGHT - 160f, MARGIN_TOP + 25f, badgeTextPaint)
 
             val datePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.parseColor("#E2E8F0")
+                color = "#E2E8F0".toColorInt()
                 textSize = 7.5f
             }
             canvas.drawText("Generated: $generatedDateStr", MARGIN_RIGHT - 165f, MARGIN_TOP + 54f, datePaint)
@@ -757,7 +758,7 @@ class MedicalReportPdfGenerator(private val context: Context) {
         canvas.drawText("BLOOD GROUP", col3X, yStart + 18f, bodySecondaryPaint)
         // Blood Group Pill Badge
         val bgRect = RectF(col3X, yStart + 21f, col3X + 55f, yStart + 35f)
-        fillPaint.color = if (bloodGroup != "Unknown") Color.parseColor("#FEE2E2") else Color.parseColor("#E2E8F0")
+        fillPaint.color = if (bloodGroup != "Unknown") "#FEE2E2".toColorInt() else "#E2E8F0".toColorInt()
         canvas.drawRoundRect(bgRect, 4f, 4f, fillPaint)
 
         val bgTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -821,7 +822,7 @@ class MedicalReportPdfGenerator(private val context: Context) {
 
     private fun drawMedicationTableHeader(canvas: Canvas, yStart: Float): Float {
         val rect = RectF(MARGIN_LEFT, yStart, MARGIN_RIGHT, yStart + 18f)
-        fillPaint.color = Color.parseColor("#E2E8F0")
+        fillPaint.color = "#E2E8F0".toColorInt()
         canvas.drawRoundRect(rect, 4f, 4f, fillPaint)
 
         val headerTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -863,8 +864,8 @@ class MedicalReportPdfGenerator(private val context: Context) {
 
         // Intake Status pill
         val statusText = if (med.isTaken) "Taken Today" else "Scheduled"
-        val statusBg = if (med.isTaken) Color.parseColor("#DCFCE7") else Color.parseColor("#FEF3C7")
-        val statusFg = if (med.isTaken) COLOR_ACCENT_GREEN else Color.parseColor("#D97706")
+        val statusBg = if (med.isTaken) "#DCFCE7".toColorInt() else "#FEF3C7".toColorInt()
+        val statusFg = if (med.isTaken) COLOR_ACCENT_GREEN else "#D97706".toColorInt()
 
         val pillRect = RectF(MARGIN_LEFT + 440f, yStart + 3f, MARGIN_LEFT + 515f, yStart + 17f)
         fillPaint.color = statusBg
@@ -882,7 +883,7 @@ class MedicalReportPdfGenerator(private val context: Context) {
 
     private fun drawVitalsTableHeader(canvas: Canvas, yStart: Float): Float {
         val rect = RectF(MARGIN_LEFT, yStart, MARGIN_RIGHT, yStart + 18f)
-        fillPaint.color = Color.parseColor("#E2E8F0")
+        fillPaint.color = "#E2E8F0".toColorInt()
         canvas.drawRoundRect(rect, 4f, 4f, fillPaint)
 
         val headerTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -968,7 +969,7 @@ class MedicalReportPdfGenerator(private val context: Context) {
 
         // Category Tag
         val categoryRect = RectF(MARGIN_LEFT + 8f, yStart + 5f, MARGIN_LEFT + 75f, yStart + 21f)
-        fillPaint.color = Color.parseColor("#E0F2FE")
+        fillPaint.color = "#E0F2FE".toColorInt()
         canvas.drawRoundRect(categoryRect, 3f, 3f, fillPaint)
 
         val tagPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -1032,7 +1033,7 @@ class MedicalReportPdfGenerator(private val context: Context) {
 
         // Ruled lines for doctor's clinical review notes
         val rulePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#CBD5E1")
+            color = "#CBD5E1".toColorInt()
             strokeWidth = 0.8f
         }
         canvas.drawLine(MARGIN_LEFT + 12f, yStart + 32f, MARGIN_RIGHT - 180f, yStart + 32f, rulePaint)

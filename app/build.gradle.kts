@@ -30,8 +30,8 @@ android {
     }
 
     lint {
-        checkReleaseBuilds = false
-        abortOnError = false
+        checkReleaseBuilds = true
+        abortOnError = true
     }
 
     signingConfigs {
@@ -45,7 +45,6 @@ android {
 
     buildTypes {
         debug {
-            signingConfig = signingConfigs.getByName("debugConfig")
         }
         release {
             isMinifyEnabled = true
@@ -108,8 +107,9 @@ dependencies {
     // implementation(libs.camerax.lifecycle)
     // implementation(libs.camerax.view)
 
-    // ML Kit Text Recognition (On-Device OCR)
+    // ML Kit Text Recognition (On-Device OCR) & ExifInterface
     implementation(libs.mlkit.text.recognition)
+    implementation(libs.androidx.exifinterface)
 
     // Firebase Authentication
     implementation(platform(libs.firebase.bom))
@@ -117,7 +117,7 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.androidx.junit)
-    testImplementation("androidx.test:core:1.6.1")
+    testImplementation(libs.androidx.test.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
