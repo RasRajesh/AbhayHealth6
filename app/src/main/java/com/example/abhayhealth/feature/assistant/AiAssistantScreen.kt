@@ -449,7 +449,7 @@ private fun AssistantHeader(
                     FilterChip(
                         selected = selectedLanguage == "English",
                         onClick = { onLanguageSelected("English") },
-                        label = { Text("EN", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                        label = { Text("English", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
