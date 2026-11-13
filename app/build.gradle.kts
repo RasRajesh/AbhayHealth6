@@ -20,7 +20,13 @@ android {
     }
 
     androidResources {
-        localeFilters += listOf("en")
+        localeFilters += listOf("en", "te")
+    }
+
+    bundle {
+        language {
+            enableSplit = false
+        }
     }
 
     lint {

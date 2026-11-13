@@ -1,6 +1,7 @@
 package com.example.abhayhealth.feature.assistant
 
 import android.content.Context
+import android.net.Uri
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import androidx.lifecycle.ViewModel
@@ -20,6 +21,9 @@ import com.example.abhayhealth.feature.records.ExtractedMedicalInfo
 import com.example.abhayhealth.feature.records.MedicalFieldParser
 import com.example.abhayhealth.feature.records.MedicalRecord
 import com.example.abhayhealth.feature.records.MedicalRecordRepository
+import com.example.abhayhealth.feature.records.export.ExportReportState
+import com.example.abhayhealth.feature.records.export.MedicalReportExportManager
+import com.example.abhayhealth.feature.records.export.MedicalReportPdfGenerator
 import com.example.abhayhealth.feature.vitals.VitalReadingEntity
 import com.example.abhayhealth.feature.vitals.VitalReadingRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -86,6 +90,13 @@ data class AiExecutiveSummary(
     val lastUpdatedText: String = ""
 )
 
+data class LabExportStats(
+    val scopeTitle: String = "Total Health Summary",
+    val reportCount: Int = 0,
+    val biomarkerCount: Int = 0,
+    val abnormalCount: Int = 0
+)
+
 class AiAssistantViewModel(
     context: Context,
     private val userPreferencesRepository: UserPreferencesRepository,
@@ -123,6 +134,18 @@ class AiAssistantViewModel(
 
     private val _isProcessing = MutableStateFlow(false)
     val isProcessing: StateFlow<Boolean> = _isProcessing.asStateFlow()
+
+    private val _showExportDialog = MutableStateFlow(false)
+    val showExportDialog: StateFlow<Boolean> = _showExportDialog.asStateFlow()
+
+    private val _exportState = MutableStateFlow<ExportReportState>(ExportReportState.Idle)
+    val exportState: StateFlow<ExportReportState> = _exportState.asStateFlow()
+
+    private val _exportStats = MutableStateFlow(LabExportStats())
+    val exportStats: StateFlow<LabExportStats> = _exportStats.asStateFlow()
+
+    private val _exportSavedMessage = MutableStateFlow<String?>(null)
+    val exportSavedMessage: StateFlow<String?> = _exportSavedMessage.asStateFlow()
 
     // Internal clinical state cache
     private var cachedProfile: PatientProfile? = null
@@ -532,6 +555,117 @@ class AiAssistantViewModel(
                 lastUpdatedText = lastSync
             )
         }
+        refreshExportStats()
+    }
+
+    private fun refreshExportStats() {
+        val entries = buildLabReportEntries()
+        _exportStats.value = LabSummaryDataBuilder.buildStats(
+            scopeTitle = _selectedReport.value.title,
+            entries = entries
+        )
+    }
+
+    fun openExportDialog() {
+        refreshExportStats()
+        _exportState.value = ExportReportState.Idle
+        _exportSavedMessage.value = null
+        _showExportDialog.value = true
+    }
+
+    fun dismissExportDialog() {
+        _showExportDialog.value = false
+        _exportState.value = ExportReportState.Idle
+        _exportSavedMessage.value = null
+    }
+
+    fun clearExportSavedMessage() {
+        _exportSavedMessage.value = null
+    }
+
+    fun suggestedLabPdfFileName(): String {
+        val stamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.US).format(Date())
+        return "AbhayHealth_Lab_Summary_$stamp.pdf"
+    }
+
+    internal fun buildLabReportEntries(): List<MedicalReportPdfGenerator.LabReportEntry> {
+        return LabSummaryDataBuilder.buildLabReportEntries(
+            selectedReportId = _selectedReport.value.id,
+            records = cachedRecords,
+            extractedInfos = cachedExtractedInfos
+        )
+    }
+
+    internal fun buildLabSummaryReportData(): MedicalReportPdfGenerator.LabSummaryReportData {
+        return LabSummaryDataBuilder.buildLabSummaryReportData(
+            selectedReport = _selectedReport.value,
+            executiveSummary = _executiveSummary.value,
+            profile = cachedProfile,
+            records = cachedRecords,
+            extractedInfos = cachedExtractedInfos
+        )
+    }
+
+    fun exportAndShareLabPdf() {
+        performLabPdfExport { file ->
+            val patientName = cachedProfile?.fullName?.ifBlank { null } ?: "Patient"
+            MedicalReportExportManager.sharePdfFile(
+                context = appContext,
+                file = file,
+                subject = "Processed Lab Data Summary - $patientName",
+                message = "Sharing formatted processed laboratory summary report from AbhayHealth for $patientName.",
+                chooserTitle = "Share Lab Summary PDF"
+            )
+        }
+    }
+
+    fun exportAndViewLabPdf() {
+        performLabPdfExport { file ->
+            MedicalReportExportManager.viewPdfFile(appContext, file)
+        }
+    }
+
+    fun exportAndPrintLabPdf() {
+        performLabPdfExport { file ->
+            MedicalReportExportManager.printPdfFile(appContext, file)
+        }
+    }
+
+    fun exportAndSaveLabPdfToUri(destinationUri: Uri) {
+        performLabPdfExport(onReady = { file ->
+            MedicalReportExportManager.copyFileToUri(appContext, file, destinationUri)
+            _exportSavedMessage.value = "Lab summary PDF saved successfully."
+        }, runOnIo = true)
+    }
+
+    private fun performLabPdfExport(
+        runOnIo: Boolean = false,
+        onReady: (File) -> Unit
+    ) {
+        viewModelScope.launch(dispatcherProvider.main) {
+            _exportState.value = ExportReportState.Generating
+            _exportSavedMessage.value = null
+            try {
+                val data = buildLabSummaryReportData()
+                val generatedFile = withContext(dispatcherProvider.io) {
+                    val reportsDir = File(appContext.cacheDir, "reports").apply { mkdirs() }
+                    val targetFile = File(reportsDir, suggestedLabPdfFileName())
+                    MedicalReportPdfGenerator(appContext).generateLabSummaryPdf(data, targetFile)
+                }
+                if (runOnIo) {
+                    withContext(dispatcherProvider.io) {
+                        onReady(generatedFile)
+                    }
+                } else {
+                    onReady(generatedFile)
+                }
+                _exportState.value = ExportReportState.Success(generatedFile)
+            } catch (e: Exception) {
+                _exportState.value = ExportReportState.Error(
+                    e.message ?: "Failed to generate lab summary PDF."
+                )
+            }
+        }
     }
 
     fun setLanguage(language: String) {
@@ -570,10 +704,10 @@ class AiAssistantViewModel(
         }
 
         try {
-            val targetLocale = if (isTelugu) Locale("te", "IN") else Locale.US
+            val targetLocale = if (isTelugu) Locale.forLanguageTag("te-IN") else Locale.US
             val langResult = textToSpeech?.setLanguage(targetLocale)
             if (langResult == TextToSpeech.LANG_MISSING_DATA || langResult == TextToSpeech.LANG_NOT_SUPPORTED) {
-                val fallbackResult = textToSpeech?.setLanguage(Locale("te"))
+                val fallbackResult = textToSpeech?.setLanguage(Locale.forLanguageTag("te"))
                 if (fallbackResult == TextToSpeech.LANG_MISSING_DATA || fallbackResult == TextToSpeech.LANG_NOT_SUPPORTED) {
                     textToSpeech?.language = Locale.US
                 }

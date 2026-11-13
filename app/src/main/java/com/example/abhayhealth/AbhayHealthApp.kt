@@ -138,7 +138,7 @@ fun AbhayHealthApp(
     val appLanguage by userPreferencesRepository.appLanguage.collectAsState(initial = "English")
     val isTelugu = appLanguage.contains("Telugu", ignoreCase = true) || appLanguage.startsWith("te", ignoreCase = true)
     val targetLocale = remember(isTelugu) {
-        if (isTelugu) Locale("te") else Locale("en")
+        if (isTelugu) Locale.forLanguageTag("te") else Locale.forLanguageTag("en")
     }
 
     val currentConfig = LocalConfiguration.current
@@ -149,13 +149,9 @@ fun AbhayHealthApp(
         }
     }
 
-    val localizedContext = remember(context, targetLocale) {
-        val config = Configuration(context.resources.configuration).apply {
-            setLocale(targetLocale)
-            setLayoutDirection(targetLocale)
-        }
+    val localizedContext = remember(context, localizedConfiguration) {
         object : android.content.ContextWrapper(context) {
-            private val configContext = context.createConfigurationContext(config)
+            private val configContext = context.createConfigurationContext(localizedConfiguration)
             override fun getResources(): android.content.res.Resources = configContext.resources
             override fun getAssets(): android.content.res.AssetManager = configContext.assets
         }

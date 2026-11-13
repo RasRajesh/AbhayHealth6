@@ -9,6 +9,7 @@
 -keep class com.example.abhayhealth.feature.medicines.** { *; }
 -keep class com.example.abhayhealth.feature.symptoms.** { *; }
 -keep class com.example.abhayhealth.feature.vitals.** { *; }
+-keep class com.example.abhayhealth.feature.assistant.** { *; }
 
 # Preserve Data Models for Navigation and Preferences
 -keep class com.example.abhayhealth.domain.model.** { *; }

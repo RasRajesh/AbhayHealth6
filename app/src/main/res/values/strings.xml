@@ -30,7 +30,7 @@
     <string name="welcome_title">Sign in to AbhayHealth</string>
     <string name="welcome_desc">Secure account access via mobile OTP. Your medical records remain stored locally on your device.</string>
     <string name="welcome_btn_continue">Continue with Mobile Number</string>
-    <string name="welcome_privacy_notice">🔒 Account authentication verifies your mobile identity. Your personal health documents, medical records, and prescriptions remain 100% stored on your device.</string>
+    <string name="welcome_privacy_notice" formatted="false">🔒 Account authentication verifies your mobile identity. Your personal health documents, medical records, and prescriptions remain 100% stored on your device.</string>
 
     <!-- Enter Phone Screen -->
     <string name="phone_title">Enter Mobile Number</string>
@@ -294,4 +294,16 @@
     <string name="home_ai_report_lab_label">Lab / Clinic: %1$s</string>
     <string name="home_ai_report_no_reports">No uploaded reports yet</string>
     <string name="home_ai_report_no_reports_sub">Upload a lab report or prescription to view report-specific AI summaries</string>
+
+    <!-- AI Assist Lab Summary PDF Export Strings -->
+    <string name="ai_export_pdf_btn">Export Lab PDF</string>
+    <string name="ai_export_dialog_title">Export Lab Summary PDF</string>
+    <string name="ai_export_dialog_subtitle">Formatted clinical report of processed lab data &amp; AI summary</string>
+    <string name="ai_export_scope_label">Report Scope</string>
+    <string name="ai_export_reports_count">%1$d processed report(s)</string>
+    <string name="ai_export_biomarkers_count">%1$d biomarkers extracted (%2$d out of range)</string>
+    <string name="ai_export_generating">Generating formatted lab summary PDF…</string>
+    <string name="ai_export_btn_save">Save PDF to Device</string>
+    <string name="ai_export_btn_share">Share Lab Summary PDF</string>
+    <string name="ai_export_saved_toast">Lab summary PDF saved successfully!</string>
 </resources>
