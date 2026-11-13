@@ -868,12 +868,12 @@ private fun ReportScopeSelectorDropdown(
 @Composable
 private fun ExecutiveDocumentSummaryCard(
     summary: AiExecutiveSummary,
+    modifier: Modifier = Modifier,
     selectedReport: ReportOption? = null,
     isTelugu: Boolean,
     isSpeaking: Boolean,
     onToggleSpeak: () -> Unit,
-    onExportPdfClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onExportPdfClick: () -> Unit
 ) {
     val title = if (isTelugu) summary.titleTe else summary.title
     val bodyText = if (isTelugu) summary.teluguText else summary.englishText
@@ -1060,8 +1060,8 @@ private fun ChatMessageBubble(
     isSpeakingThis: Boolean,
     onSpeak: () -> Unit,
     onSuggestionClick: (String) -> Unit,
-    onImageClick: ((String) -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onImageClick: ((String) -> Unit)? = null
 ) {
     val isUser = message.sender == MessageSender.USER
     val isTelugu = message.language == "Telugu"

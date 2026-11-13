@@ -3,6 +3,7 @@ package com.example.abhayhealth.feature.home
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.core.net.toUri
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -196,7 +197,7 @@ fun EmergencyMedicalCard(
                 Button(
                     onClick = {
                         val dialIntent = Intent(Intent.ACTION_DIAL).apply {
-                            data = Uri.parse("tel:108")
+                            data = "tel:108".toUri()
                         }
                         context.startActivity(dialIntent)
                     },
@@ -277,7 +278,7 @@ fun EmergencyMedicalCard(
                     Button(
                         onClick = {
                             val dialIntent = Intent(Intent.ACTION_DIAL).apply {
-                                data = Uri.parse("tel:$iceContact")
+                                data = "tel:$iceContact".toUri()
                             }
                             context.startActivity(dialIntent)
                         },

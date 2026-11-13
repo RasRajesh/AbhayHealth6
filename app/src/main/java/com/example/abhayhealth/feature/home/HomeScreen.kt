@@ -110,8 +110,8 @@ import com.example.abhayhealth.feature.vitals.FingerprintVitalsScannerDialog
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onAddRecordClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAddRecordClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var showManualAddVitalDialog by remember { mutableStateOf(false) }
@@ -904,12 +904,12 @@ fun BiomarkerDetailDialog(
 @Composable
 private fun AiHealthSummaryCard(
     state: AiHealthSummaryUiState,
-    onSelectScope: (AiSummaryScope, Long?) -> Unit = { _, _ -> },
     onRefresh: () -> Unit,
     onOpenSafetyAudit: () -> Unit,
     onOpenDoctorBrief: () -> Unit,
     onOpenLabExplainer: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onSelectScope: (AiSummaryScope, Long?) -> Unit = { _, _ -> }
 ) {
     OutlinedCard(
         modifier = modifier

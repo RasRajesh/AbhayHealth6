@@ -65,6 +65,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import android.graphics.BitmapFactory
 import android.net.Uri
+import androidx.core.net.toUri
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -84,9 +85,9 @@ fun MeScreen(
     viewModel: MeViewModel,
     onEditProfileClick: () -> Unit,
     onSignOutClick: () -> Unit,
+    modifier: Modifier = Modifier,
     onNavigateToRecords: () -> Unit = {},
-    onNavigateToMedicines: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onNavigateToMedicines: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val patientName by viewModel.patientName.collectAsState()
@@ -114,7 +115,7 @@ fun MeScreen(
                     val file = File(uriStr)
                     if (file.exists()) BitmapFactory.decodeFile(uriStr) else null
                 } else {
-                    val uri = Uri.parse(uriStr)
+                    val uri = uriStr.toUri()
                     context.contentResolver.openInputStream(uri)?.use { stream ->
                         BitmapFactory.decodeStream(stream)
                     }
@@ -652,7 +653,7 @@ fun MeScreen(
                             Button(
                                 onClick = {
                                     try {
-                                        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$contactPhone"))
+                                        val intent = Intent(Intent.ACTION_DIAL, "tel:$contactPhone".toUri())
                                         context.startActivity(intent)
                                     } catch (e: Exception) {
                                         Toast.makeText(context, "Cannot dial: $contactPhone", Toast.LENGTH_SHORT).show()

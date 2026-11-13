@@ -54,6 +54,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -430,10 +431,10 @@ private fun ReminderTimeEditor(
     }
 
     var hour12 by remember(parsedH) {
-        mutableStateOf(if (parsedH == 0) 12 else if (parsedH > 12) parsedH - 12 else parsedH)
+        mutableIntStateOf(if (parsedH == 0) 12 else if (parsedH > 12) parsedH - 12 else parsedH)
     }
     var minute by remember(parsedM) {
-        mutableStateOf(parsedM)
+        mutableIntStateOf(parsedM)
     }
     var isAm by remember(parsedH) {
         mutableStateOf(parsedH < 12)

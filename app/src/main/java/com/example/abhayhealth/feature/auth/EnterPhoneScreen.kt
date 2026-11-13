@@ -71,9 +71,9 @@ import com.example.abhayhealth.feature.onboarding.OnboardingViewModel
 @Composable
 fun EnterPhoneScreen(
     viewModel: AuthViewModel,
+    modifier: Modifier = Modifier,
     onboardingViewModel: OnboardingViewModel? = null,
-    onBackClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onBackClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val countryCode by viewModel.countryCode.collectAsState()
