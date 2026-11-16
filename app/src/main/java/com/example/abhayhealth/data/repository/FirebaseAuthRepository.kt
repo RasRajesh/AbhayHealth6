@@ -25,6 +25,7 @@ import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthMissingActivityForRecaptchaException
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
@@ -224,11 +225,16 @@ class FirebaseAuthRepository(
             PhoneAuthProvider.verifyPhoneNumber(optionsBuilder.build())
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initiate PhoneAuthProvider", e)
+            val friendly = if (e is FirebaseException) {
+                formatPhoneAuthError(e)
+            } else {
+                e.localizedMessage
+                    ?: "Could not start SMS OTP verification. You can also try Continue with Gmail (Optional) below."
+            }
             _otpUiState.update {
                 it.copy(
                     isSendingOtp = false,
-                    errorMessage = e.localizedMessage
-                        ?: "Could not start SMS OTP verification. You can also try Continue with Gmail below."
+                    errorMessage = friendly
                 )
             }
         }
@@ -279,6 +285,7 @@ class FirebaseAuthRepository(
             Log.w(TAG, "Phone OTP sign-in failed", e)
             val message = when (e) {
                 is FirebaseAuthInvalidCredentialsException -> "Incorrect OTP code. Please check and try again."
+                is FirebaseException -> formatPhoneAuthError(e)
                 else -> e.localizedMessage ?: "OTP verification failed. Please try again."
             }
             _otpUiState.update {
@@ -569,7 +576,20 @@ class FirebaseAuthRepository(
             return Regex("""^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$""").matches(trimmed)
         }
 
-        private fun formatPhoneAuthError(e: FirebaseException): String {
+        internal fun formatPhoneAuthError(e: FirebaseException): String {
+            val rawMessage = e.localizedMessage.orEmpty()
+            val isRecaptchaOrIntegrityError =
+                e is FirebaseAuthMissingActivityForRecaptchaException ||
+                    rawMessage.contains("recaptcha", ignoreCase = true) ||
+                    rawMessage.contains("siteKey", ignoreCase = true) ||
+                    rawMessage.contains("play integrity", ignoreCase = true) ||
+                    rawMessage.contains("PlayIntegrity", ignoreCase = true) ||
+                    rawMessage.contains("MISSING_CLIENT_IDENTIFIER", ignoreCase = true)
+
+            if (isRecaptchaOrIntegrityError) {
+                return "Phone OTP app verification requires Play Integrity or reCAPTCHA Enterprise (and SHA-1/SHA-256) configured in Firebase Console for this project, or use a Firebase Phone test number in the emulator. You can sign in right now with Continue with Gmail (Optional) below."
+            }
+
             return when (e) {
                 is FirebaseTooManyRequestsException ->
                     "Too many OTP attempts right now. Please wait a minute or try Continue with Gmail (Optional)."
@@ -578,11 +598,19 @@ class FirebaseAuthRepository(
                 is FirebaseAuthException -> when (e.errorCode) {
                     "ERROR_OPERATION_NOT_ALLOWED", "OPERATION_NOT_ALLOWED" ->
                         "Phone OTP sign-in is not yet enabled in Firebase Auth Console for this project. Enable Phone provider in Firebase Console or use Continue with Gmail (Optional) below."
-                    else -> e.localizedMessage
-                        ?: "Unable to send OTP right now. You can also try Continue with Gmail (Optional)."
+                    "ERROR_MISSING_CLIENT_IDENTIFIER",
+                    "ERROR_APP_NOT_AUTHORIZED",
+                    "ERROR_CAPTCHA_CHECK_FAILED" ->
+                        "Phone OTP verification could not validate this debug/emulator build (reCAPTCHA Enterprise or Play Integrity is not configured in Firebase Console). Enable it in Firebase Console or use Continue with Gmail (Optional) below."
+                    "ERROR_QUOTA_EXCEEDED" ->
+                        "Daily SMS OTP quota reached for this project. Please try again later or use Continue with Gmail (Optional) below."
+                    else -> rawMessage.ifBlank {
+                        "Unable to send OTP right now. You can also try Continue with Gmail (Optional)."
+                    }
                 }
-                else -> e.localizedMessage
-                    ?: "Could not send OTP right now. Check your internet connection or try Continue with Gmail (Optional)."
+                else -> rawMessage.ifBlank {
+                    "Could not send OTP right now. Check your internet connection or try Continue with Gmail (Optional)."
+                }
             }
         }
     }
