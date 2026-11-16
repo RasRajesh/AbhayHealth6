@@ -21,6 +21,7 @@ class UserPreferences(private val context: Context) {
         val KEY_AI_SUMMARY_ENABLED = booleanPreferencesKey("ai_summary_enabled")
         val KEY_APP_LANGUAGE = stringPreferencesKey("app_language")
         val KEY_MED_REMINDERS_ENABLED = booleanPreferencesKey("med_reminders_enabled")
+        val KEY_BACKUP_GMAIL = stringPreferencesKey("optional_backup_gmail")
     }
 
     val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -70,6 +71,20 @@ class UserPreferences(private val context: Context) {
     suspend fun setMedRemindersEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[KEY_MED_REMINDERS_ENABLED] = enabled
+        }
+    }
+
+    val optionalBackupGmail: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[KEY_BACKUP_GMAIL]
+    }
+
+    suspend fun setOptionalBackupGmail(email: String) {
+        context.dataStore.edit { preferences ->
+            if (email.isBlank()) {
+                preferences.remove(KEY_BACKUP_GMAIL)
+            } else {
+                preferences[KEY_BACKUP_GMAIL] = email.trim()
+            }
         }
     }
 }

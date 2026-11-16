@@ -28,18 +28,21 @@
 
     <!-- Welcome / Account Entry Screen -->
     <string name="welcome_title">Sign in to AbhayHealth</string>
-    <string name="welcome_desc">Your private, real-time health vault synced securely with Google Sign-In &amp; Cloud Firestore.</string>
+    <string name="welcome_desc">Sign in once with your +91 mobile number &amp; OTP. Your health vault stays signed in and synced.</string>
     <string name="welcome_btn_continue">Continue with Google</string>
-    <string name="welcome_privacy_notice" formatted="false">🔒 Protected by Google Sign-In, Firebase App Check &amp; private encrypted sync</string>
+    <string name="welcome_btn_continue_optional">Continue with Gmail (Optional)</string>
+    <string name="auth_or_optional">OR (Optional)</string>
+    <string name="auth_gmail_optional_hint">Gmail is optional. You can add or link your Gmail anytime inside the Me tab to upload and back up your health data.</string>
+    <string name="welcome_privacy_notice" formatted="false">🔒 First-time OTP verification • Protected by Firebase App Check &amp; private sync</string>
 
     <!-- Enter Phone Screen -->
-    <string name="phone_title">Enter Mobile Number</string>
-    <string name="phone_subtitle">We will send a 6-digit OTP code to verify your mobile number.</string>
+    <string name="phone_title">Indian Mobile Login (+91)</string>
+    <string name="phone_subtitle">Enter your 10-digit mobile number for one-time OTP verification.</string>
     <string name="phone_country_label">Country Code</string>
     <string name="phone_number_label">Mobile Number</string>
     <string name="phone_number_hint">e.g. 9876543210</string>
     <string name="phone_btn_send_otp">Send OTP Code</string>
-    <string name="phone_invalid_number">Please enter a valid 10-digit mobile number.</string>
+    <string name="phone_invalid_number">Please enter a valid 10-digit +91 mobile number.</string>
     <string name="phone_sending_otp">Sending OTP verification code…</string>
 
     <!-- Verify OTP Screen -->
@@ -333,4 +336,20 @@
     <string name="dashboard_home_card_title">Health Analytics Dashboard</string>
     <string name="dashboard_home_card_sub">Visualize Blood Pressure &amp; Glucose trends synced via Firestore</string>
     <string name="dashboard_home_open_btn">Open Dashboard</string>
+
+    <!-- Optional Gmail Backup & Upload Strings -->
+    <string name="me_gmail_section_title">Gmail Cloud Backup (Optional)</string>
+    <string name="me_gmail_card_title">Optional Gmail Health Backup</string>
+    <string name="me_gmail_not_added">Not added yet (Optional)</string>
+    <string name="me_gmail_btn_add_edit">Add / Link Gmail</string>
+    <string name="me_gmail_btn_change">Update Gmail</string>
+    <string name="me_gmail_btn_upload">Upload Data to Gmail</string>
+    <string name="me_gmail_uploading">Syncing &amp; preparing Gmail backup…</string>
+    <string name="me_gmail_dialog_title">Add or Link Optional Gmail</string>
+    <string name="me_gmail_dialog_desc">Optionally link your Google account or enter any Gmail address to upload and email a complete PDF + Cloud backup of your health data.</string>
+    <string name="me_gmail_btn_link_google">Link Google Account Automatically</string>
+    <string name="me_gmail_or_enter">Or enter your Gmail address</string>
+    <string name="me_gmail_input_label">Gmail Address</string>
+    <string name="me_gmail_input_hint">e.g. yourname@gmail.com</string>
+    <string name="me_gmail_btn_save">Save Backup Gmail</string>
 </resources>

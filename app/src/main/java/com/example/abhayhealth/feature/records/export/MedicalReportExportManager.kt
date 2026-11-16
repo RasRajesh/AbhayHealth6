@@ -99,6 +99,42 @@ class MedicalReportExportManager(
         )
     }
 
+    fun uploadBackupToGmail(
+        file: File,
+        targetGmail: String?,
+        patientName: String,
+        summaryText: String
+    ) {
+        val uri = getReportUri(context, file)
+        val cleanRecipient = targetGmail?.trim()?.takeIf { it.isNotEmpty() }
+        val subject = "AbhayHealth Cloud & PDF Backup - $patientName"
+
+        val baseIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, subject)
+            putExtra(Intent.EXTRA_TEXT, summaryText)
+            if (cleanRecipient != null) {
+                putExtra(Intent.EXTRA_EMAIL, arrayOf(cleanRecipient))
+            }
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+
+        val gmailIntent = Intent(baseIntent).apply {
+            setPackage("com.google.android.gm")
+        }
+
+        try {
+            context.startActivity(gmailIntent)
+        } catch (_: Exception) {
+            val chooser = Intent.createChooser(baseIntent, "Upload AbhayHealth Backup to Gmail").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(chooser)
+        }
+    }
+
     fun viewReport(file: File) {
         viewPdfFile(context, file)
     }

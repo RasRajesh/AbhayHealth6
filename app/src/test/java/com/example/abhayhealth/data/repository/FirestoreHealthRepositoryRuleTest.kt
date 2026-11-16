@@ -26,7 +26,12 @@ class FirestoreHealthRepositoryRuleTest : FirestoreEmulatorTestBase() {
         val repository = FirestoreHealthRepository(firestore)
 
         withTimeout(DEFAULT_TIMEOUT_MS) {
-            repository.ensureUserAccount(aliceUid, ALICE_EMAIL, "Alice Patient")
+            repository.ensureUserAccount(
+                userId = aliceUid,
+                email = null,
+                displayName = "Alice Patient",
+                phoneNumber = "+919876543210"
+            )
             repository.upsertPatientProfile(
                 PatientProfile(
                     accountUid = aliceUid,
@@ -55,9 +60,25 @@ class FirestoreHealthRepositoryRuleTest : FirestoreEmulatorTestBase() {
         }
 
         assertThat(accountDoc?.userId).isEqualTo(aliceUid)
-        assertThat(accountDoc?.email).isEqualTo(ALICE_EMAIL)
+        assertThat(accountDoc?.phoneNumber).isEqualTo("+919876543210")
+        assertThat(accountDoc?.email).isNull()
         assertThat(profileDoc?.bloodGroup).isEqualTo("O+")
         assertThat(profileDoc?.city).isEqualTo("Hyderabad")
+
+        // Adding optional Gmail later preserves existing +91 phoneNumber
+        withTimeout(DEFAULT_TIMEOUT_MS) {
+            repository.ensureUserAccount(
+                userId = aliceUid,
+                email = ALICE_EMAIL,
+                displayName = "Alice Patient",
+                phoneNumber = null
+            )
+        }
+        val linkedAccountDoc = withTimeout(FLOW_TIMEOUT_MS) {
+            repository.observeUserAccount(aliceUid).first { it?.email == ALICE_EMAIL }
+        }
+        assertThat(linkedAccountDoc?.phoneNumber).isEqualTo("+919876543210")
+        assertThat(linkedAccountDoc?.email).isEqualTo(ALICE_EMAIL)
 
         withTimeout(DEFAULT_TIMEOUT_MS) {
             repository.upsertPatientProfile(
