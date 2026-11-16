@@ -570,7 +570,11 @@ class FirestoreHealthRepository(
     suspend fun upsertVitalReading(vital: VitalReadingEntity) {
         val docId = "vital_${vital.id}"
         val docRef = vitalsCollection(vital.accountUid).document(docId)
-        val cleanType = if (vital.type == "WEIGHT") "WEIGHT" else "BLOOD_PRESSURE"
+        val cleanType = when (vital.type) {
+            "WEIGHT" -> "WEIGHT"
+            "BLOOD_GLUCOSE" -> "BLOOD_GLUCOSE"
+            else -> "BLOOD_PRESSURE"
+        }
         val cleanNotes = vital.notes.take(1000)
 
         try {
@@ -585,6 +589,7 @@ class FirestoreHealthRepository(
                     vital.systolic?.let { put("systolic", it) }
                     vital.diastolic?.let { put("diastolic", it) }
                     vital.weightKg?.let { put("weightKg", it) }
+                    vital.glucoseMgDl?.let { put("glucoseMgDl", it) }
                     put("createdAt", FieldValue.serverTimestamp())
                     put("updatedAt", FieldValue.serverTimestamp())
                 }
@@ -600,6 +605,7 @@ class FirestoreHealthRepository(
                     "systolic" to (vital.systolic ?: FieldValue.delete()),
                     "diastolic" to (vital.diastolic ?: FieldValue.delete()),
                     "weightKg" to (vital.weightKg ?: FieldValue.delete()),
+                    "glucoseMgDl" to (vital.glucoseMgDl ?: FieldValue.delete()),
                     "updatedAt" to FieldValue.serverTimestamp()
                 )
                 val task = docRef.update(updateMap)

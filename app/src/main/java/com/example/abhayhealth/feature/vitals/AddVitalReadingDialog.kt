@@ -1,5 +1,6 @@
 package com.example.abhayhealth.feature.vitals
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,12 +9,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bloodtype
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material3.AlertDialog
@@ -42,11 +43,19 @@ import com.example.abhayhealth.R
 fun AddVitalReadingDialog(
     initialMetric: VitalType,
     onDismissRequest: () -> Unit,
-    onSaveReading: (type: VitalType, systolic: Double?, diastolic: Double?, weightKg: Double?, notes: String) -> Unit
+    onSaveReading: (
+        type: VitalType,
+        systolic: Double?,
+        diastolic: Double?,
+        weightKg: Double?,
+        glucoseMgDl: Double?,
+        notes: String
+    ) -> Unit
 ) {
-    var selectedType by remember { mutableStateOf(initialMetric) }
+    var selectedType by remember(initialMetric) { mutableStateOf(initialMetric) }
     var systolicInput by remember { mutableStateOf("") }
     var diastolicInput by remember { mutableStateOf("") }
+    var glucoseInput by remember { mutableStateOf("") }
     var weightInput by remember { mutableStateOf("") }
     var notesInput by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -67,9 +76,10 @@ fun AddVitalReadingDialog(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
             ) {
-                // Type selector
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     FilterChip(
@@ -92,6 +102,28 @@ fun AddVitalReadingDialog(
                             selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         modifier = Modifier.testTag("dialog_chip_bp")
+                    )
+
+                    FilterChip(
+                        selected = selectedType == VitalType.BLOOD_GLUCOSE,
+                        onClick = {
+                            selectedType = VitalType.BLOOD_GLUCOSE
+                            errorMessage = null
+                        },
+                        label = { Text(stringResource(id = R.string.vitals_metric_glucose)) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Bloodtype,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        modifier = Modifier.testTag("dialog_chip_glucose")
                     )
 
                     FilterChip(
@@ -153,6 +185,22 @@ fun AddVitalReadingDialog(
                                 .testTag("input_diastolic")
                         )
                     }
+                    VitalType.BLOOD_GLUCOSE -> {
+                        OutlinedTextField(
+                            value = glucoseInput,
+                            onValueChange = {
+                                glucoseInput = it
+                                errorMessage = null
+                            },
+                            label = { Text(stringResource(id = R.string.vitals_dialog_glucose)) },
+                            placeholder = { Text("e.g. 96") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("input_glucose")
+                        )
+                    }
                     VitalType.WEIGHT -> {
                         OutlinedTextField(
                             value = weightInput,
@@ -177,7 +225,7 @@ fun AddVitalReadingDialog(
                     value = notesInput,
                     onValueChange = { notesInput = it },
                     label = { Text(stringResource(id = R.string.vitals_dialog_notes)) },
-                    placeholder = { Text("e.g. Morning resting measurement") },
+                    placeholder = { Text("e.g. Fasting / Post-meal / Morning") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("input_vital_notes")
@@ -209,7 +257,15 @@ fun AddVitalReadingDialog(
                                 errorMessage = "Please enter a valid diastolic pressure (30–200 mmHg)."
                                 return@Button
                             }
-                            onSaveReading(selectedType, sys, dia, null, notesInput.trim())
+                            onSaveReading(selectedType, sys, dia, null, null, notesInput.trim())
+                        }
+                        VitalType.BLOOD_GLUCOSE -> {
+                            val glucose = glucoseInput.toDoubleOrNull()
+                            if (glucose == null || glucose !in 20.0..800.0) {
+                                errorMessage = "Please enter a valid glucose level (20–800 mg/dL)."
+                                return@Button
+                            }
+                            onSaveReading(selectedType, null, null, null, glucose, notesInput.trim())
                         }
                         VitalType.WEIGHT -> {
                             val w = weightInput.toDoubleOrNull()
@@ -217,7 +273,7 @@ fun AddVitalReadingDialog(
                                 errorMessage = "Please enter a valid weight (15–400 kg)."
                                 return@Button
                             }
-                            onSaveReading(selectedType, null, null, w, notesInput.trim())
+                            onSaveReading(selectedType, null, null, w, null, notesInput.trim())
                         }
                     }
                 },

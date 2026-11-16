@@ -31,13 +31,15 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -51,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -59,12 +62,15 @@ import com.example.abhayhealth.core.designsystem.components.AbhayHealthBrandLogo
 import com.example.abhayhealth.core.designsystem.components.EmptyStateContent
 import com.example.abhayhealth.feature.symptoms.AddSymptomDialog
 import com.example.abhayhealth.feature.symptoms.SymptomTrendsComponent
+import com.example.abhayhealth.feature.vitals.AddVitalReadingDialog
 
 @Composable
 fun TrendsScreen(
     viewModel: TrendsViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBackClick: (() -> Unit)? = null
 ) {
+    val dashboardState by viewModel.dashboardState.collectAsState()
     val labTrends by viewModel.labTrends.collectAsState()
     val vitalsTrends by viewModel.vitalsTrends.collectAsState()
     val allTrends by viewModel.biomarkerTrends.collectAsState()
@@ -72,15 +78,28 @@ fun TrendsScreen(
     val availableMetrics by viewModel.availableComparisonMetrics.collectAsState()
     val symptoms by viewModel.symptoms.collectAsState()
     val showAddSymptomDialog by viewModel.showAddSymptomDialog.collectAsState()
+    val showAddVitalDialog by viewModel.showAddVitalDialog.collectAsState()
+    val initialVitalMetric by viewModel.initialVitalMetric.collectAsState()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabTitles = listOf(
+        stringResource(id = R.string.trends_tab_dashboard),
         stringResource(id = R.string.trends_tab_labs),
         stringResource(id = R.string.trends_tab_vitals),
         stringResource(id = R.string.trends_tab_compare),
         stringResource(id = R.string.trends_tab_symptoms),
         stringResource(id = R.string.trends_tab_adherence)
     )
+
+    if (showAddVitalDialog) {
+        AddVitalReadingDialog(
+            initialMetric = initialVitalMetric,
+            onDismissRequest = { viewModel.dismissAddVitalDialog() },
+            onSaveReading = { type, systolic, diastolic, weightKg, glucoseMgDl, notes ->
+                viewModel.logDashboardVital(type, systolic, diastolic, weightKg, glucoseMgDl, notes)
+            }
+        )
+    }
 
     if (showAddSymptomDialog) {
         AddSymptomDialog(
@@ -92,8 +111,8 @@ fun TrendsScreen(
     }
 
     val displayedTrends = when (selectedTabIndex) {
-        0 -> labTrends.ifEmpty { allTrends.filter { it.category == "LABS" } }
-        1 -> vitalsTrends.ifEmpty { allTrends.filter { it.category == "VITALS" } }
+        1 -> labTrends.ifEmpty { allTrends.filter { it.category == "LABS" } }
+        2 -> vitalsTrends.ifEmpty { allTrends.filter { it.category == "VITALS" } }
         else -> emptyList()
     }
 
@@ -108,6 +127,19 @@ fun TrendsScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            if (onBackClick != null) {
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .testTag("trends_back_btn")
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(id = R.string.common_back)
+                    )
+                }
+            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(id = R.string.trends_title),
@@ -140,7 +172,8 @@ fun TrendsScreen(
                 Tab(
                     selected = selectedTabIndex == index,
                     onClick = { selectedTabIndex = index },
-                    text = { Text(text = title, maxLines = 1) }
+                    text = { Text(text = title, maxLines = 1) },
+                    modifier = Modifier.testTag("trends_tab_$index")
                 )
             }
         }
@@ -148,7 +181,14 @@ fun TrendsScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         when (selectedTabIndex) {
-            2 -> {
+            0 -> {
+                HealthAnalyticsDashboard(
+                    state = dashboardState,
+                    onSelectRange = { viewModel.setTimeRange(it) },
+                    onLogVitalClick = { metric -> viewModel.openAddVitalDialog(metric) }
+                )
+            }
+            3 -> {
                 // Dual Metric Comparison Tab (e.g. Weight vs Blood Pressure)
                 LazyColumn(
                     contentPadding = PaddingValues(bottom = 24.dp),
@@ -164,7 +204,7 @@ fun TrendsScreen(
                     }
                 }
             }
-            3 -> {
+            4 -> {
                 // Symptom Tracking & Frequency Tab
                 LazyColumn(
                     contentPadding = PaddingValues(bottom = 24.dp),
@@ -179,7 +219,7 @@ fun TrendsScreen(
                     }
                 }
             }
-            4 -> {
+            5 -> {
                 // Adherence Tab
                 LazyColumn(
                     contentPadding = PaddingValues(bottom = 16.dp),
@@ -215,7 +255,7 @@ fun TrendsScreen(
                                 )
                             ) {
                                 when (selectedTabIndex) {
-                                    0 -> EmptyStateContent(
+                                    1 -> EmptyStateContent(
                                         title = stringResource(id = R.string.trends_empty_labs_title),
                                         description = stringResource(id = R.string.trends_empty_labs_desc),
                                         icon = Icons.Default.Science

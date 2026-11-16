@@ -108,12 +108,13 @@ service cloud.firestore {
       return data.userId is string && data.userId == userId &&
              data.userId.size() >= 1 && data.userId.size() <= 128 &&
              data.localVitalId is int && data.localVitalId >= 0 &&
-             data.type in ['BLOOD_PRESSURE', 'WEIGHT'] &&
+             data.type in ['BLOOD_PRESSURE', 'BLOOD_GLUCOSE', 'WEIGHT'] &&
              data.timestamp is int && data.timestamp >= 0 &&
              data.notes is string && data.notes.size() <= 1000 &&
              isOptionalNumber(data, 'systolic') &&
              isOptionalNumber(data, 'diastolic') &&
              isOptionalNumber(data, 'weightKg') &&
+             isOptionalNumber(data, 'glucoseMgDl') &&
              isValidServerTime(data.createdAt) &&
              isValidServerTime(data.updatedAt);
     }
@@ -250,7 +251,7 @@ service cloud.firestore {
         allow delete: if isOwner(userId) && isValidId(medicationId);
       }
 
-      // Vital Readings (Blood Pressure / Weight)
+      // Vital Readings (Blood Pressure / Blood Glucose / Weight)
       match /vitals/{vitalId} {
         allow get: if isOwner(userId) && isValidId(vitalId);
         allow list: if isOwner(userId);
@@ -263,7 +264,7 @@ service cloud.firestore {
                          ]) &&
                          incoming().keys().hasOnly([
                            'userId', 'localVitalId', 'type', 'systolic', 'diastolic',
-                           'weightKg', 'timestamp', 'notes', 'createdAt', 'updatedAt'
+                           'weightKg', 'glucoseMgDl', 'timestamp', 'notes', 'createdAt', 'updatedAt'
                          ]) &&
                          isValidVitalReadingDoc(incoming(), userId);
 
@@ -274,7 +275,7 @@ service cloud.firestore {
                          incoming().localVitalId == existing().localVitalId &&
                          isValidVitalReadingDoc(incoming(), userId) &&
                          incoming().diff(existing()).affectedKeys().hasOnly([
-                           'type', 'systolic', 'diastolic', 'weightKg',
+                           'type', 'systolic', 'diastolic', 'weightKg', 'glucoseMgDl',
                            'timestamp', 'notes', 'updatedAt'
                          ]);
 

@@ -160,6 +160,16 @@ class FirestoreHealthRepositoryRuleTest : FirestoreEmulatorTestBase() {
                     notes = "Resting morning reading"
                 )
             )
+            repository.upsertVitalReading(
+                VitalReadingEntity(
+                    id = 203L,
+                    accountUid = aliceUid,
+                    type = VitalType.BLOOD_GLUCOSE.name,
+                    glucoseMgDl = 94.0,
+                    timestamp = 1700000060000L,
+                    notes = "Fasting glucose"
+                )
+            )
             repository.upsertSymptomLog(
                 SymptomLogEntity(
                     id = symptomId,
@@ -179,7 +189,9 @@ class FirestoreHealthRepositoryRuleTest : FirestoreEmulatorTestBase() {
             repository.observeMedications(aliceUid).first { list -> list.any { it.id == medId } }
         }
         val vitals = withTimeout(FLOW_TIMEOUT_MS) {
-            repository.observeVitals(aliceUid).first { list -> list.any { it.localVitalId == vitalId } }
+            repository.observeVitals(aliceUid).first { list ->
+                list.any { it.localVitalId == vitalId } && list.any { it.localVitalId == 203L }
+            }
         }
         val symptoms = withTimeout(FLOW_TIMEOUT_MS) {
             repository.observeSymptoms(aliceUid).first { list -> list.any { it.localSymptomId == symptomId } }
@@ -187,6 +199,8 @@ class FirestoreHealthRepositoryRuleTest : FirestoreEmulatorTestBase() {
 
         assertThat(meds.first { it.id == medId }.isTaken).isTrue()
         assertThat(vitals.first { it.localVitalId == vitalId }.systolic).isEqualTo(118.0)
+        assertThat(vitals.first { it.localVitalId == 203L }.type).isEqualTo(VitalType.BLOOD_GLUCOSE.name)
+        assertThat(vitals.first { it.localVitalId == 203L }.glucoseMgDl).isEqualTo(94.0)
         assertThat(symptoms.first { it.localSymptomId == symptomId }.symptomName).isEqualTo("Mild Headache")
     }
 

@@ -111,7 +111,8 @@ import com.example.abhayhealth.feature.vitals.FingerprintVitalsScannerDialog
 fun HomeScreen(
     viewModel: HomeViewModel,
     modifier: Modifier = Modifier,
-    onAddRecordClick: () -> Unit = {}
+    onAddRecordClick: () -> Unit = {},
+    onOpenHealthDashboard: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var showManualAddVitalDialog by remember { mutableStateOf(false) }
@@ -138,7 +139,9 @@ fun HomeScreen(
     }
 
     val latestBp = remember(vitalReadings, extractedBiomarkers) {
-        val bp = vitalReadings.firstOrNull { it.type == "BLOOD_PRESSURE" && it.systolic != null && it.diastolic != null }
+        val bp = vitalReadings
+            .filter { it.type == VitalType.BLOOD_PRESSURE.name && it.systolic != null && it.diastolic != null }
+            .maxByOrNull { it.timestamp }
         if (bp != null) {
             "${bp.systolic?.toInt()}/${bp.diastolic?.toInt()} mmHg"
         } else {
@@ -148,11 +151,18 @@ fun HomeScreen(
             if (bpBio != null) "${bpBio.value} ${bpBio.unit}".trim() else "120/80 mmHg"
         }
     }
-    val latestSugar = remember(extractedBiomarkers) {
-        val sugar = extractedBiomarkers.firstOrNull {
-            it.testName.contains("Glucose", ignoreCase = true) || it.testName.contains("Sugar", ignoreCase = true) || it.testName.contains("FBS", ignoreCase = true)
+    val latestSugar = remember(vitalReadings, extractedBiomarkers) {
+        val glu = vitalReadings
+            .filter { it.type == VitalType.BLOOD_GLUCOSE.name && it.glucoseMgDl != null }
+            .maxByOrNull { it.timestamp }
+        if (glu != null) {
+            "${glu.glucoseMgDl?.toInt()} mg/dL"
+        } else {
+            val sugar = extractedBiomarkers.firstOrNull {
+                it.testName.contains("Glucose", ignoreCase = true) || it.testName.contains("Sugar", ignoreCase = true) || it.testName.contains("FBS", ignoreCase = true)
+            }
+            if (sugar != null) "${sugar.value} ${sugar.unit}".trim() else "95 mg/dL"
         }
-        if (sugar != null) "${sugar.value} ${sugar.unit}".trim() else "95 mg/dL"
     }
     val latestHr = remember(extractedBiomarkers, vitalReadings) {
         val hrReading = vitalReadings.firstOrNull { it.type == "HEART_RATE" && it.systolic != null }
@@ -260,6 +270,75 @@ fun HomeScreen(
                     selectedBiomarkerModal = SelectedBiomarkerModal(name, bio, displayVal)
                 }
             )
+        }
+
+        // 3b. Health Analytics Dashboard Entry Card (Firestore Over-Time Charts)
+        item {
+            OutlinedCard(
+                onClick = onOpenHealthDashboard,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("home_health_dashboard_card"),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.outlinedCardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(42.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ShowChart,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                        Column {
+                            Text(
+                                text = stringResource(id = R.string.dashboard_home_card_title),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = stringResource(id = R.string.dashboard_home_card_sub),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    FilledTonalButton(
+                        onClick = onOpenHealthDashboard,
+                        modifier = Modifier.testTag("home_open_dashboard_btn"),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.dashboard_home_open_btn),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
         }
 
         // 4. Emergency Medical SOS & Paramedic ICE Identification Card
@@ -639,8 +718,8 @@ fun HomeScreen(
         AddVitalReadingDialog(
             initialMetric = selectedVitalMetric,
             onDismissRequest = { showManualAddVitalDialog = false },
-            onSaveReading = { type, systolic, diastolic, weightKg, notes ->
-                viewModel.addVitalReading(type, systolic, diastolic, weightKg, notes)
+            onSaveReading = { type, systolic, diastolic, weightKg, glucoseMgDl, notes ->
+                viewModel.addVitalReading(type, systolic, diastolic, weightKg, notes, glucoseMgDl)
                 showManualAddVitalDialog = false
             }
         )
@@ -651,14 +730,19 @@ fun HomeScreen(
             modal = modal,
             onDismiss = { selectedBiomarkerModal = null },
             onLogVital = {
-                val metricType = if (modal.name.contains("weight", ignoreCase = true)) {
-                    VitalType.WEIGHT
-                } else {
-                    VitalType.BLOOD_PRESSURE
+                val metricType = when {
+                    modal.name.contains("weight", ignoreCase = true) -> VitalType.WEIGHT
+                    modal.name.contains("sugar", ignoreCase = true) ||
+                        modal.name.contains("glucose", ignoreCase = true) -> VitalType.BLOOD_GLUCOSE
+                    else -> VitalType.BLOOD_PRESSURE
                 }
                 viewModel.selectVitalMetric(metricType)
                 selectedBiomarkerModal = null
-                viewModel.showAddVitalDialog(true)
+                if (metricType == VitalType.BLOOD_PRESSURE) {
+                    viewModel.showAddVitalDialog(true)
+                } else {
+                    showManualAddVitalDialog = true
+                }
             }
         )
     }
@@ -739,7 +823,7 @@ fun BiomarkerDetailDialog(
             "This biomarker was extracted from your diagnostic laboratory reports. Tracking it over time provides your healthcare provider with actionable clinical trajectory data."
     }
 
-    val isLoggableVital = modal.name.lowercase() in listOf("blood pressure", "bp", "weight")
+    val isLoggableVital = modal.name.lowercase() in listOf("blood pressure", "bp", "blood sugar", "glucose", "weight")
 
     AlertDialog(
         onDismissRequest = onDismiss,

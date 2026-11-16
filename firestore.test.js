@@ -301,6 +301,42 @@ test("Vitals: owner CRUD, valid enum, numeric validation, cross-user denial", as
 
   await assertSucceeds(aliceDb.collection("users").doc(ALICE_UID).collection("vitals").get());
 
+  // BLOOD_GLUCOSE vital create & update succeeds
+  const glucoseRef = aliceDb.collection("users").doc(ALICE_UID).collection("vitals").doc("vital_glucose_1");
+  await assertSucceeds(
+    glucoseRef.set({
+      userId: ALICE_UID,
+      localVitalId: 10,
+      type: "BLOOD_GLUCOSE",
+      glucoseMgDl: 96,
+      timestamp: 1700000050000,
+      notes: "Fasting morning sample",
+      createdAt: pastTimestamp(10000),
+      updatedAt: pastTimestamp(3000),
+    })
+  );
+  await assertSucceeds(
+    glucoseRef.update({
+      glucoseMgDl: 112.5,
+      notes: "Post-breakfast check",
+      updatedAt: pastTimestamp(500),
+    })
+  );
+
+  // Non-numeric glucoseMgDl rejected
+  await assertFails(
+    aliceDb.collection("users").doc(ALICE_UID).collection("vitals").doc("vital_bad_glu").set({
+      userId: ALICE_UID,
+      localVitalId: 11,
+      type: "BLOOD_GLUCOSE",
+      glucoseMgDl: "96 mg/dL",
+      timestamp: 1700000050000,
+      notes: "",
+      createdAt: pastTimestamp(10000),
+      updatedAt: pastTimestamp(1000),
+    })
+  );
+
   // Invalid type enum rejected
   await assertFails(
     aliceDb.collection("users").doc(ALICE_UID).collection("vitals").doc("vital_bad").set({
@@ -317,6 +353,7 @@ test("Vitals: owner CRUD, valid enum, numeric validation, cross-user denial", as
   // Cross-user rejected
   await assertFails(bobDb.collection("users").doc(ALICE_UID).collection("vitals").get());
   await assertSucceeds(vitalRef.delete());
+  await assertSucceeds(glucoseRef.delete());
 });
 
 // --- 7. Symptoms (/users/{userId}/symptoms/{symptomId}) ---

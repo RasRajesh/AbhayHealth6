@@ -22,8 +22,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Bloodtype
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.ShowChart
@@ -164,7 +167,9 @@ fun HealthTrendsChartCard(
 
             // Metric Selector Pills (Recharts-inspired filter tabs)
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FilterChip(
@@ -185,6 +190,26 @@ fun HealthTrendsChartCard(
                     ),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.testTag("chip_metric_bp")
+                )
+
+                FilterChip(
+                    selected = selectedMetric == VitalType.BLOOD_GLUCOSE,
+                    onClick = { onSelectMetric(VitalType.BLOOD_GLUCOSE) },
+                    label = { Text(stringResource(id = R.string.vitals_metric_glucose)) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Bloodtype,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.testTag("chip_metric_glucose")
                 )
 
                 FilterChip(
@@ -305,6 +330,29 @@ private fun VitalSummaryMetricsRow(
                         label = stringResource(id = R.string.vitals_range),
                         value = "${minSys.roundToInt()}/${minDia.roundToInt()} – ${maxSys.roundToInt()}/${maxDia.roundToInt()}",
                         unit = ""
+                    )
+                }
+                VitalType.BLOOD_GLUCOSE -> {
+                    val latest = readings.lastOrNull()?.glucoseMgDl
+                    val avgGlucose = readings.mapNotNull { it.glucoseMgDl }.average()
+                    val minGlucose = readings.mapNotNull { it.glucoseMgDl }.minOrNull() ?: 0.0
+                    val maxGlucose = readings.mapNotNull { it.glucoseMgDl }.maxOrNull() ?: 0.0
+
+                    MetricStatColumn(
+                        label = stringResource(id = R.string.vitals_latest),
+                        value = latest?.roundToInt()?.toString() ?: "--",
+                        unit = stringResource(id = R.string.vitals_unit_glucose),
+                        highlight = true
+                    )
+                    MetricStatColumn(
+                        label = stringResource(id = R.string.vitals_avg),
+                        value = avgGlucose.roundToInt().toString(),
+                        unit = stringResource(id = R.string.vitals_unit_glucose)
+                    )
+                    MetricStatColumn(
+                        label = stringResource(id = R.string.vitals_range),
+                        value = "${minGlucose.roundToInt()} – ${maxGlucose.roundToInt()}",
+                        unit = stringResource(id = R.string.vitals_unit_glucose)
                     )
                 }
                 VitalType.WEIGHT -> {
@@ -442,6 +490,12 @@ private fun RechartsCanvasChart(
                     val max = (allVals.maxOrNull() ?: 140.0) + 15.0
                     Pair(min.coerceAtLeast(40.0), max.coerceAtLeast(140.0))
                 }
+                VitalType.BLOOD_GLUCOSE -> {
+                    val allVals = readings.mapNotNull { it.glucoseMgDl }
+                    val min = ((allVals.minOrNull() ?: 70.0) - 15.0).coerceAtLeast(40.0)
+                    val max = ((allVals.maxOrNull() ?: 140.0) + 20.0).coerceAtLeast(150.0)
+                    Pair(min, max)
+                }
                 VitalType.WEIGHT -> {
                     val allVals = readings.mapNotNull { it.weightKg }
                     val min = (allVals.minOrNull() ?: 60.0) - 2.0
@@ -548,6 +602,19 @@ private fun RechartsCanvasChart(
                         )
                     }
                 }
+                VitalType.BLOOD_GLUCOSE -> {
+                    val glucosePoints = readings.mapIndexedNotNull { index, reading ->
+                        reading.glucoseMgDl?.let { Offset(getX(index), getY(it)) }
+                    }
+                    if (glucosePoints.isNotEmpty()) {
+                        drawSmoothAreaAndLine(
+                            points = glucosePoints,
+                            baseY = chartPaddingTop + chartHeight,
+                            lineColor = diastolicColor,
+                            gradientColor = diastolicColor
+                        )
+                    }
+                }
                 VitalType.WEIGHT -> {
                     val weightPoints = readings.mapIndexedNotNull { index, reading ->
                         reading.weightKg?.let { Offset(getX(index), getY(it)) }
@@ -609,6 +676,14 @@ private fun RechartsCanvasChart(
                             drawCircle(color = systolicColor, radius = 3.5.dp.toPx(), center = Offset(activeX, ptY))
                         }
                         reading.diastolic?.let {
+                            val ptY = getY(it)
+                            drawCircle(color = diastolicColor.copy(alpha = 0.25f), radius = 8.dp.toPx(), center = Offset(activeX, ptY))
+                            drawCircle(color = Color.White, radius = 5.dp.toPx(), center = Offset(activeX, ptY))
+                            drawCircle(color = diastolicColor, radius = 3.5.dp.toPx(), center = Offset(activeX, ptY))
+                        }
+                    }
+                    VitalType.BLOOD_GLUCOSE -> {
+                        reading.glucoseMgDl?.let {
                             val ptY = getY(it)
                             drawCircle(color = diastolicColor.copy(alpha = 0.25f), radius = 8.dp.toPx(), center = Offset(activeX, ptY))
                             drawCircle(color = Color.White, radius = 5.dp.toPx(), center = Offset(activeX, ptY))
@@ -695,6 +770,26 @@ private fun RechartsTooltipCard(
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = if (sys < 120 && dia < 80) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                    )
+                }
+                VitalType.BLOOD_GLUCOSE -> {
+                    val glucose = reading.glucoseMgDl ?: 0.0
+                    val statusText = when {
+                        glucose < 100.0 -> "Normal Fasting (<100)"
+                        glucose < 140.0 -> "Normal Post-Meal (<140)"
+                        else -> "Elevated (≥140 mg/dL)"
+                    }
+                    Text(
+                        text = "${glucose.roundToInt()} mg/dL",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (glucose < 140.0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                     )
                 }
                 VitalType.WEIGHT -> {
@@ -827,6 +922,12 @@ private fun ChartLegendAndReferenceRow(
                         label = stringResource(id = R.string.vitals_legend_diastolic)
                     )
                 }
+                VitalType.BLOOD_GLUCOSE -> {
+                    LegendItem(
+                        color = MaterialTheme.colorScheme.tertiary,
+                        label = stringResource(id = R.string.vitals_legend_glucose)
+                    )
+                }
                 VitalType.WEIGHT -> {
                     LegendItem(
                         color = MaterialTheme.colorScheme.primary,
@@ -839,6 +940,7 @@ private fun ChartLegendAndReferenceRow(
         Text(
             text = when (metricType) {
                 VitalType.BLOOD_PRESSURE -> stringResource(id = R.string.vitals_ref_bp)
+                VitalType.BLOOD_GLUCOSE -> stringResource(id = R.string.vitals_ref_glucose)
                 VitalType.WEIGHT -> stringResource(id = R.string.vitals_ref_weight)
             },
             style = MaterialTheme.typography.labelSmall,
