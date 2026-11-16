@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.abhayhealth.core.common.DefaultDispatcherProvider
 import com.example.abhayhealth.core.common.DispatcherProvider
+import com.example.abhayhealth.data.remote.FirestoreHealthRepository
 import com.example.abhayhealth.domain.model.AuthState
 import com.example.abhayhealth.domain.repository.AuthRepository
 import kotlinx.coroutines.Job
@@ -27,7 +28,8 @@ class MedicinesViewModel(
     private val medicationDao: MedicationDao? = null,
     private val authRepository: AuthRepository? = null,
     context: Context? = null,
-    private val dispatcherProvider: DispatcherProvider = DefaultDispatcherProvider()
+    private val dispatcherProvider: DispatcherProvider = DefaultDispatcherProvider(),
+    private val firestoreHealthRepository: FirestoreHealthRepository? = null
 ) : ViewModel() {
 
     private val appContext: Context? = context?.applicationContext
@@ -53,15 +55,20 @@ class MedicinesViewModel(
         observeAuthState()
     }
 
-    private fun getCurrentUid(): String {
-        return authRepository?.currentUser?.uid?.ifBlank { null } ?: "local_user"
+    private fun getCurrentUid(): String? {
+        return authRepository?.currentUser?.uid?.ifBlank { null }
     }
 
     private fun observeAuthState() {
         viewModelScope.launch(dispatcherProvider.main) {
             val authFlow = authRepository?.authState ?: MutableStateFlow(AuthState.Initial)
             authFlow.collectLatest { state ->
-                val uid = if (state is AuthState.Authenticated) state.user.uid else "local_user"
+                val uid = if (state is AuthState.Authenticated) state.user.uid else getCurrentUid()
+                if (uid == null) {
+                    observeJob?.cancel()
+                    _medications.value = emptyList()
+                    return@collectLatest
+                }
                 observeMedicationsForUid(uid)
             }
         }
@@ -109,11 +116,11 @@ class MedicinesViewModel(
 
     fun updateMedication(id: String, name: String, dosage: String, timeSlot: String) {
         if (name.isBlank()) return
-        val uid = getCurrentUid()
+        val uid = getCurrentUid() ?: return
         val dao = medicationDao ?: return
 
         viewModelScope.launch(dispatcherProvider.main) {
-            withContext(dispatcherProvider.io) {
+            val updated = withContext(dispatcherProvider.io) {
                 dao.updateMedication(
                     id = id,
                     accountUid = uid,
@@ -121,6 +128,10 @@ class MedicinesViewModel(
                     dosage = dosage.trim().ifBlank { "1 Tablet" },
                     timeSlot = timeSlot.trim()
                 )
+                dao.getMedicationByIdSync(id, uid)
+            }
+            if (updated != null) {
+                firestoreHealthRepository?.enqueueMedication(updated)
             }
 
             // Immediately reschedule alarm for updated reminder time
@@ -150,7 +161,7 @@ class MedicinesViewModel(
 
     fun addMedication(name: String, dosage: String, timeSlot: String) {
         if (name.isBlank()) return
-        val uid = getCurrentUid()
+        val uid = getCurrentUid() ?: return
         val dao = medicationDao ?: return
 
         val entity = PrescriptionMedicationEntity(
@@ -164,6 +175,7 @@ class MedicinesViewModel(
             withContext(dispatcherProvider.io) {
                 dao.insertOrUpdate(entity)
             }
+            firestoreHealthRepository?.enqueueMedication(entity)
 
             // Immediately schedule alarm for this newly added medication
             appContext?.let { ctx ->
@@ -181,18 +193,22 @@ class MedicinesViewModel(
     }
 
     fun toggleDoseTaken(id: String) {
-        val uid = getCurrentUid()
+        val uid = getCurrentUid() ?: return
         val dao = medicationDao ?: return
 
         viewModelScope.launch(dispatcherProvider.main) {
-            withContext(dispatcherProvider.io) {
+            val updated = withContext(dispatcherProvider.io) {
                 dao.toggleDoseTaken(id, uid)
+                dao.getMedicationByIdSync(id, uid)
+            }
+            if (updated != null) {
+                firestoreHealthRepository?.enqueueMedication(updated)
             }
         }
     }
 
     fun removeMedication(id: String) {
-        val uid = getCurrentUid()
+        val uid = getCurrentUid() ?: return
         val dao = medicationDao ?: return
 
         // Cancel scheduled alarm when removed
@@ -204,6 +220,7 @@ class MedicinesViewModel(
             withContext(dispatcherProvider.io) {
                 dao.deleteMedication(id, uid)
             }
+            firestoreHealthRepository?.enqueueDeleteMedication(uid, id)
         }
     }
 

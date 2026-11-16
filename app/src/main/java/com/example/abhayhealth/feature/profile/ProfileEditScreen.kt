@@ -205,7 +205,7 @@ fun ProfileEditScreen(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = maskPhoneNumber(userPhone),
+                                text = if (userPhone.contains("@")) userPhone else maskPhoneNumber(userPhone),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

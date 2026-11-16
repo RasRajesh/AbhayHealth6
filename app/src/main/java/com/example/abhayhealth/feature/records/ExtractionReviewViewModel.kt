@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.abhayhealth.core.common.DefaultDispatcherProvider
 import com.example.abhayhealth.core.common.DispatcherProvider
+import com.example.abhayhealth.data.remote.FirestoreHealthRepository
 import com.example.abhayhealth.domain.model.AuthState
 import com.example.abhayhealth.domain.model.ParsedMedicalResult
 import com.example.abhayhealth.domain.repository.AuthRepository
@@ -26,7 +27,8 @@ class ExtractionReviewViewModel(
     private val authRepository: AuthRepository,
     private val medicationDao: MedicationDao? = null,
     private val vitalReadingRepository: VitalReadingRepository? = null,
-    private val dispatcherProvider: DispatcherProvider = DefaultDispatcherProvider()
+    private val dispatcherProvider: DispatcherProvider = DefaultDispatcherProvider(),
+    private val firestoreHealthRepository: FirestoreHealthRepository? = null
 ) : ViewModel() {
 
     private val _selectedRecord = MutableStateFlow<MedicalRecord?>(null)
@@ -93,8 +95,11 @@ class ExtractionReviewViewModel(
         observeAuthState()
     }
 
+    val currentAccountUid: String?
+        get() = authRepository.currentUser?.uid?.ifBlank { null }
+
     private fun getCurrentUid(): String {
-        return authRepository.currentUser?.uid?.ifBlank { null } ?: "local_user"
+        return currentAccountUid ?: ""
     }
 
     private fun observeAuthState() {
@@ -134,6 +139,10 @@ class ExtractionReviewViewModel(
 
     fun loadRecordAndInfo(recordId: Long) {
         val uid = getCurrentUid()
+        if (uid.isBlank()) {
+            _errorMessage.value = "Please sign in with Google to view this record."
+            return
+        }
 
         loadingJob?.cancel()
         loadingJob = viewModelScope.launch(dispatcherProvider.main) {
@@ -297,10 +306,13 @@ class ExtractionReviewViewModel(
                 withContext(dispatcherProvider.io) {
                     medicalRecordRepository.saveExtractedInfoWithTitleUpdate(info, info.documentTitle)
                 }
+                val updatedRecord = record.copy(title = info.documentTitle)
+                firestoreHealthRepository?.enqueueMedicalRecord(updatedRecord, info)
 
                 val dao = medicationDao
                 val medicines = _parsedMedicines.value
                 if (dao != null && medicines.isNotEmpty()) {
+                    val syncedMeds = mutableListOf<PrescriptionMedicationEntity>()
                     withContext(dispatcherProvider.io) {
                         val existingMeds = dao.getMedicationsByAccount(uid).first()
                         medicines.forEach { med ->
@@ -314,6 +326,7 @@ class ExtractionReviewViewModel(
                                 med.copy(accountUid = uid)
                             }
                             dao.insertOrUpdate(updatedMed)
+                            syncedMeds.add(updatedMed)
                             context?.let { ctx ->
                                 MedicationAlarmScheduler.scheduleMedicationAlarm(
                                     context = ctx,
@@ -325,6 +338,9 @@ class ExtractionReviewViewModel(
                             }
                         }
                     }
+                    syncedMeds.forEach { synced ->
+                        firestoreHealthRepository?.enqueueMedication(synced)
+                    }
                 }
 
                 val reportTimestamp = MedicalFieldParser.parseDateToTimestamp(currentDate) ?: record.recordDate
@@ -332,6 +348,7 @@ class ExtractionReviewViewModel(
                 val vitals = MedicalFieldParser.extractVitalsFromResults(_parsedResults.value, uid)
                 val vitalRepo = vitalReadingRepository
                 if (vitalRepo != null && vitals.isNotEmpty()) {
+                    val syncedVitals = mutableListOf<com.example.abhayhealth.feature.vitals.VitalReadingEntity>()
                     withContext(dispatcherProvider.io) {
                         val existingVitals = vitalRepo.getAllReadings(uid).first()
                         vitals.forEach { vital ->
@@ -344,12 +361,17 @@ class ExtractionReviewViewModel(
                                     it.weightKg == taggedVital.weightKg
                             }
                             if (!alreadyExists) {
-                                vitalRepo.insertReading(taggedVital)
+                                val vitalId = vitalRepo.insertReading(taggedVital)
+                                syncedVitals.add(taggedVital.copy(id = vitalId))
                             }
                         }
                     }
+                    syncedVitals.forEach { syncedVital ->
+                        firestoreHealthRepository?.enqueueVitalReading(syncedVital)
+                    }
                 }
 
+                _selectedRecord.value = updatedRecord
                 _extractedInfo.value = info
                 _isSaving.value = false
 
@@ -666,11 +688,14 @@ class ExtractionReviewViewModel(
                 withContext(dispatcherProvider.io) {
                     medicalRecordRepository.saveExtractedInfoWithTitleUpdate(info, info.documentTitle)
                 }
+                val updatedRecord = record.copy(title = info.documentTitle)
+                firestoreHealthRepository?.enqueueMedicalRecord(updatedRecord, info)
 
                 // 2. Add medications to MedicationDao (deduplicated by name + timeSlot) and schedule local notification alarms
                 val dao = medicationDao
                 val medicines = _parsedMedicines.value
                 if (dao != null && medicines.isNotEmpty()) {
+                    val syncedMeds = mutableListOf<PrescriptionMedicationEntity>()
                     withContext(dispatcherProvider.io) {
                         val existingMeds = dao.getMedicationsByAccount(uid).first()
                         medicines.forEach { med ->
@@ -684,6 +709,7 @@ class ExtractionReviewViewModel(
                                 med.copy(accountUid = uid)
                             }
                             dao.insertOrUpdate(updatedMed)
+                            syncedMeds.add(updatedMed)
                             context?.let { ctx ->
                                 MedicationAlarmScheduler.scheduleMedicationAlarm(
                                     context = ctx,
@@ -695,6 +721,9 @@ class ExtractionReviewViewModel(
                             }
                         }
                     }
+                    syncedMeds.forEach { synced ->
+                        firestoreHealthRepository?.enqueueMedication(synced)
+                    }
                 }
 
                 // 3. Extract vitals and add to VitalReadingRepository (deduplicated per record) so they populate Trends & Home
@@ -703,6 +732,7 @@ class ExtractionReviewViewModel(
                 val vitals = MedicalFieldParser.extractVitalsFromResults(_parsedResults.value, uid)
                 val vitalRepo = vitalReadingRepository
                 if (vitalRepo != null && vitals.isNotEmpty()) {
+                    val syncedVitals = mutableListOf<com.example.abhayhealth.feature.vitals.VitalReadingEntity>()
                     withContext(dispatcherProvider.io) {
                         val existingVitals = vitalRepo.getAllReadings(uid).first()
                         vitals.forEach { vital ->
@@ -715,12 +745,17 @@ class ExtractionReviewViewModel(
                                     it.weightKg == taggedVital.weightKg
                             }
                             if (!alreadyExists) {
-                                vitalRepo.insertReading(taggedVital)
+                                val vitalId = vitalRepo.insertReading(taggedVital)
+                                syncedVitals.add(taggedVital.copy(id = vitalId))
                             }
                         }
                     }
+                    syncedVitals.forEach { syncedVital ->
+                        firestoreHealthRepository?.enqueueVitalReading(syncedVital)
+                    }
                 }
 
+                _selectedRecord.value = updatedRecord
                 _extractedInfo.value = info
                 _infoMessage.value = "Data successfully saved! Medicines and vitals updated in your health vault."
                 onSuccess()

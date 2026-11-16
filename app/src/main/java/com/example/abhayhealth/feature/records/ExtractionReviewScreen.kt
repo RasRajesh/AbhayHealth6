@@ -144,7 +144,7 @@ fun ExtractionReviewScreen(
     }
 
     if (showAddMedDialog) {
-        val currentUid = record?.accountUid ?: "local_user"
+        val currentUid = record?.accountUid ?: viewModel.currentAccountUid ?: ""
         AddMedicineDialog(
             onDismiss = { showAddMedDialog = false },
             onAdd = { name, dosage, timeSlot ->
