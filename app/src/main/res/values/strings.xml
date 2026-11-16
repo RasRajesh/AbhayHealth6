@@ -28,9 +28,9 @@
 
     <!-- Welcome / Account Entry Screen -->
     <string name="welcome_title">Sign in to AbhayHealth</string>
-    <string name="welcome_desc">Secure account access via mobile OTP. Your medical records remain stored locally on your device.</string>
-    <string name="welcome_btn_continue">Continue with Mobile Number</string>
-    <string name="welcome_privacy_notice" formatted="false">🔒 Account authentication verifies your mobile identity. Your personal health documents, medical records, and prescriptions remain 100% stored on your device.</string>
+    <string name="welcome_desc">Your private, real-time health vault synced securely with Google Sign-In &amp; Cloud Firestore.</string>
+    <string name="welcome_btn_continue">Continue with Google</string>
+    <string name="welcome_privacy_notice" formatted="false">🔒 Protected by Google Sign-In, Firebase App Check &amp; private encrypted sync</string>
 
     <!-- Enter Phone Screen -->
     <string name="phone_title">Enter Mobile Number</string>
@@ -306,4 +306,8 @@
     <string name="ai_export_btn_save">Save PDF to Device</string>
     <string name="ai_export_btn_share">Share Lab Summary PDF</string>
     <string name="ai_export_saved_toast">Lab summary PDF saved successfully!</string>
+
+    <!-- Cloud Sync & Offline Status Strings -->
+    <string name="sync_status_offline">Offline mode — changes saved locally &amp; queued for sync</string>
+    <string name="sync_status_pending">Syncing pending changes to cloud…</string>
 </resources>
