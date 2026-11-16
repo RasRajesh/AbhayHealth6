@@ -174,6 +174,15 @@ fun MainScreen(
                             launchSingleTop = true
                             restoreState = true
                         }
+                    },
+                    onOpenHealthDashboard = {
+                        navController.navigate(NavRoutes.MainTab.TRENDS) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 )
             }
@@ -189,7 +198,10 @@ fun MainScreen(
                 )
             }
             composable(NavRoutes.MainTab.TRENDS) {
-                TrendsScreen(viewModel = trendsViewModel)
+                TrendsScreen(
+                    viewModel = trendsViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
             }
             composable(NavRoutes.MainTab.MEDICINES) {
                 MedicinesScreen(viewModel = medicinesViewModel)

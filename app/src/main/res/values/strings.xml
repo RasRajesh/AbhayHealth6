@@ -135,8 +135,9 @@
     <string name="records_btn_upload">Add Record</string>
 
     <!-- Trends Screen Placeholder -->
-    <string name="trends_title">Health Trends</string>
-    <string name="trends_subtitle">Longitudinal analytics extracted from your lab reports &amp; vitals</string>
+    <string name="trends_title">Health Dashboard</string>
+    <string name="trends_subtitle">Real-time Cloud Firestore visualizations for vitals &amp; labs</string>
+    <string name="trends_tab_dashboard">Dashboard</string>
     <string name="trends_tab_labs">Lab Trends</string>
     <string name="trends_tab_vitals">Vital Trends</string>
     <string name="trends_tab_compare">Compare Metrics</string>
@@ -222,24 +223,29 @@
     <string name="vitals_chart_title">Health Trends &amp; Vitals</string>
     <string name="vitals_chart_subtitle">Interactive visualization from local Room database</string>
     <string name="vitals_metric_bp">Blood Pressure</string>
+    <string name="vitals_metric_glucose">Blood Glucose</string>
     <string name="vitals_metric_weight">Weight</string>
     <string name="vitals_btn_log">+ Log Vital</string>
     <string name="vitals_latest">Latest</string>
     <string name="vitals_avg">7-Day Avg</string>
     <string name="vitals_range">Min – Max</string>
     <string name="vitals_unit_bp">mmHg</string>
+    <string name="vitals_unit_glucose">mg/dL</string>
     <string name="vitals_unit_weight">kg</string>
     <string name="vitals_legend_systolic">Systolic</string>
     <string name="vitals_legend_diastolic">Diastolic</string>
+    <string name="vitals_legend_glucose">Glucose (mg/dL)</string>
     <string name="vitals_legend_weight">Weight (kg)</string>
     <string name="vitals_ref_bp">Standard Guideline: &lt;120 / &lt;80 mmHg</string>
+    <string name="vitals_ref_glucose">Target: 70–99 mg/dL Fasting • &lt;140 Post-Meal</string>
     <string name="vitals_ref_weight">Stable Healthy Target Trend</string>
     <string name="vitals_dialog_title">Log Vital Measurement</string>
     <string name="vitals_dialog_systolic">Systolic (mmHg)</string>
     <string name="vitals_dialog_diastolic">Diastolic (mmHg)</string>
+    <string name="vitals_dialog_glucose">Blood Glucose (mg/dL)</string>
     <string name="vitals_dialog_weight">Weight (kg)</string>
     <string name="vitals_dialog_notes">Notes / Context (Optional)</string>
-    <string name="vitals_dialog_save">Save to Database</string>
+    <string name="vitals_dialog_save">Save &amp; Sync</string>
     <string name="vitals_dialog_cancel">Cancel</string>
     <string name="vitals_status_optimal">Optimal</string>
     <string name="vitals_status_normal">Normal</string>
@@ -310,4 +316,21 @@
     <!-- Cloud Sync & Offline Status Strings -->
     <string name="sync_status_offline">Offline mode — changes saved locally &amp; queued for sync</string>
     <string name="sync_status_pending">Syncing pending changes to cloud…</string>
+
+    <!-- Health Analytics Dashboard Strings -->
+    <string name="dashboard_firestore_source_title">Cloud Firestore Live Telemetry</string>
+    <string name="dashboard_sync_live">Live Cloud Sync</string>
+    <string name="dashboard_sync_cached">Offline Cache Ready</string>
+    <string name="dashboard_sync_pending">Syncing Changes…</string>
+    <string name="dashboard_bp_chart_title">Blood Pressure Over Time</string>
+    <string name="dashboard_bp_chart_sub">Systolic &amp; Diastolic arterial tension (mmHg)</string>
+    <string name="dashboard_glucose_chart_title">Blood Glucose Over Time</string>
+    <string name="dashboard_glucose_chart_sub">Logged &amp; lab-extracted glycemic trend (mg/dL)</string>
+    <string name="dashboard_weight_chart_title">Weight Over Time</string>
+    <string name="dashboard_weight_chart_sub">Body weight trajectory (kg)</string>
+    <string name="dashboard_empty_bp">No Blood Pressure readings in this range. Tap Log BP to record and sync to Firestore.</string>
+    <string name="dashboard_empty_glucose">No Blood Glucose readings in this range. Log glucose or scan a lab report to plot over time.</string>
+    <string name="dashboard_home_card_title">Health Analytics Dashboard</string>
+    <string name="dashboard_home_card_sub">Visualize Blood Pressure &amp; Glucose trends synced via Firestore</string>
+    <string name="dashboard_home_open_btn">Open Dashboard</string>
 </resources>

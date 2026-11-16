@@ -818,7 +818,8 @@ class HomeViewModel(
         systolic: Double?,
         diastolic: Double?,
         weightKg: Double?,
-        notes: String
+        notes: String,
+        glucoseMgDl: Double? = null
     ) {
         viewModelScope.launch(dispatcherProvider.io) {
             val uid = authRepository?.currentUser?.uid?.ifBlank { null } ?: return@launch
@@ -828,6 +829,7 @@ class HomeViewModel(
                 systolic = systolic,
                 diastolic = diastolic,
                 weightKg = weightKg,
+                glucoseMgDl = glucoseMgDl,
                 timestamp = System.currentTimeMillis(),
                 notes = notes
             )
@@ -847,7 +849,8 @@ class HomeViewModel(
         systolic: Double?,
         diastolic: Double?,
         weightKg: Double?,
-        notes: String
+        notes: String,
+        glucoseMgDl: Double? = null
     ) {
         viewModelScope.launch(dispatcherProvider.io) {
             val uid = authRepository?.currentUser?.uid?.ifBlank { null } ?: return@launch
@@ -857,6 +860,7 @@ class HomeViewModel(
                 systolic = systolic,
                 diastolic = diastolic,
                 weightKg = weightKg,
+                glucoseMgDl = glucoseMgDl,
                 timestamp = System.currentTimeMillis(),
                 notes = notes
             )

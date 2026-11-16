@@ -25,7 +25,7 @@ import com.example.abhayhealth.feature.vitals.VitalReadingEntity
         VitalReadingEntity::class,
         SymptomLogEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class MedicalRecordDatabase : RoomDatabase() {
@@ -119,6 +119,14 @@ abstract class MedicalRecordDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `vital_readings` ADD COLUMN `glucoseMgDl` REAL"
+                )
+            }
+        }
+
         @Volatile
         private var INSTANCE: MedicalRecordDatabase? = null
 
@@ -129,7 +137,7 @@ abstract class MedicalRecordDatabase : RoomDatabase() {
                     MedicalRecordDatabase::class.java,
                     DATABASE_NAME
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance

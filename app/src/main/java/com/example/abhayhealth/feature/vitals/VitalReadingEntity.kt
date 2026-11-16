@@ -5,6 +5,7 @@ import androidx.room.PrimaryKey
 
 enum class VitalType {
     BLOOD_PRESSURE,
+    BLOOD_GLUCOSE,
     WEIGHT
 }
 
@@ -17,6 +18,7 @@ data class VitalReadingEntity(
     val systolic: Double? = null,
     val diastolic: Double? = null,
     val weightKg: Double? = null,
+    val glucoseMgDl: Double? = null,
     val timestamp: Long = System.currentTimeMillis(),
     val notes: String = ""
 )

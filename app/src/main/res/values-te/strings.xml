@@ -111,8 +111,9 @@
     <string name="records_btn_upload">రికార్డును జోడించండి</string>
 
     <!-- Trends Screen Placeholder -->
-    <string name="trends_title">ఆరోగ్య ట్రెండ్స్</string>
-    <string name="trends_subtitle">మీ ల్యాబ్ నివేదికలు &amp; వైటల్స్ నుండి సేకరించిన విశ్లేషణలు</string>
+    <string name="trends_title">ఆరోగ్య డ్యాష్‌బోర్డ్</string>
+    <string name="trends_subtitle">Cloud Firestore ద్వారా ప్రత్యక్ష ఆరోగ్య కొలతల విశ్లేషణలు</string>
+    <string name="trends_tab_dashboard">డ్యాష్‌బోర్డ్</string>
     <string name="trends_tab_labs">ల్యాబ్ ట్రెండ్స్</string>
     <string name="trends_tab_vitals">వైటల్స్ ట్రెండ్స్</string>
     <string name="trends_tab_adherence">మందుల పాటించడం</string>
@@ -300,4 +301,26 @@
     <!-- Cloud Sync & Offline Status Strings -->
     <string name="sync_status_offline">ఆఫ్‌లైన్ మోడ్ — మార్పులు స్థానికంగా సేవ్ చేయబడి సింక్ కోసం వేచి ఉన్నాయి</string>
     <string name="sync_status_pending">పెండింగ్ మార్పులను క్లౌడ్‌కు సింక్ చేస్తోంది…</string>
+
+    <!-- Blood Glucose & Health Analytics Dashboard Strings -->
+    <string name="vitals_metric_glucose">రక్తంలో చక్కెర (గ్లూకోజ్)</string>
+    <string name="vitals_unit_glucose">mg/dL</string>
+    <string name="vitals_legend_glucose">గ్లూకోజ్ (mg/dL)</string>
+    <string name="vitals_ref_glucose">లక్ష్యం: 70–99 mg/dL ఉపవాసం • &lt;140 భోజనం తర్వాత</string>
+    <string name="vitals_dialog_glucose">రక్తంలో చక్కెర (mg/dL)</string>
+    <string name="dashboard_firestore_source_title">Cloud Firestore ప్రత్యక్ష టెలిమెట్రీ</string>
+    <string name="dashboard_sync_live">లైవ్ క్లౌడ్ సింక్</string>
+    <string name="dashboard_sync_cached">ఆఫ్‌లైన్ క్యాష్ సిద్ధంగా ఉంది</string>
+    <string name="dashboard_sync_pending">సింక్ అవుతోంది…</string>
+    <string name="dashboard_bp_chart_title">కాలక్రమేణా రక్తపోటు</string>
+    <string name="dashboard_bp_chart_sub">సిస్టోలిక్ &amp; డయాస్టోలిక్ ధమనుల ఒత్తిడి (mmHg)</string>
+    <string name="dashboard_glucose_chart_title">కాలక్రమేణా రక్తంలో చక్కెర</string>
+    <string name="dashboard_glucose_chart_sub">నమోదు చేసిన &amp; ల్యాబ్ గ్లూకోజ్ ధోరణి (mg/dL)</string>
+    <string name="dashboard_weight_chart_title">కాలక్రమేణా శరీర బరువు</string>
+    <string name="dashboard_weight_chart_sub">శరీర బరువు మార్పు (kg)</string>
+    <string name="dashboard_empty_bp">ఈ సమయంలో రక్తపోటు రీడింగ్‌లు లేవు. BP నమోదు చేయండి.</string>
+    <string name="dashboard_empty_glucose">ఈ సమయంలో గ్లూకోజ్ రీడింగ్‌లు లేవు. గ్లూకోజ్ నమోదు చేయండి లేదా ల్యాబ్ నివేదిక స్కాన్ చేయండి.</string>
+    <string name="dashboard_home_card_title">ఆరోగ్య విశ్లేషణ డ్యాష్‌బోర్డ్</string>
+    <string name="dashboard_home_card_sub">Firestore లోని రక్తపోటు &amp; చక్కెర ట్రెండ్‌లను వీక్షించండి</string>
+    <string name="dashboard_home_open_btn">డ్యాష్‌బోర్డ్ తెరవండి</string>
 </resources>

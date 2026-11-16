@@ -83,6 +83,7 @@ data class VitalReadingDoc(
     val systolic: Double? = null,
     val diastolic: Double? = null,
     val weightKg: Double? = null,
+    val glucoseMgDl: Double? = null,
     val timestamp: Long = 0L,
     val notes: String = "",
     @ServerTimestamp val createdAt: Timestamp? = null,

@@ -824,6 +824,25 @@ object MedicalFieldParser {
                         )
                     )
                 }
+            } else if (
+                name.contains("glucose") ||
+                name.contains("blood sugar") ||
+                name.contains("fbs") ||
+                name.contains("ppbs") ||
+                name.contains("rbs")
+            ) {
+                val glucose = Regex("""\d+(?:\.\d+)?""").find(valStr)?.value?.toDoubleOrNull()
+                if (glucose != null && glucose in 20.0..800.0) {
+                    vitals.add(
+                        VitalReadingEntity(
+                            accountUid = accountUid,
+                            type = VitalType.BLOOD_GLUCOSE.name,
+                            glucoseMgDl = glucose,
+                            timestamp = now,
+                            notes = "Extracted from medical document (${item.testName})"
+                        )
+                    )
+                }
             }
         }
         return vitals

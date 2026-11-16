@@ -364,6 +364,7 @@ class FirestoreHealthSyncManager(
         systolic = systolic,
         diastolic = diastolic,
         weightKg = weightKg,
+        glucoseMgDl = glucoseMgDl,
         timestamp = timestamp,
         notes = notes
     )
