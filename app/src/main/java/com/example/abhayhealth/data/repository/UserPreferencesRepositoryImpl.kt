@@ -37,4 +37,10 @@ class UserPreferencesRepositoryImpl(
     override suspend fun setMedRemindersEnabled(enabled: Boolean) {
         userPreferences.setMedRemindersEnabled(enabled)
     }
+
+    override val optionalBackupGmail: Flow<String?> = userPreferences.optionalBackupGmail
+
+    override suspend fun setOptionalBackupGmail(email: String) {
+        userPreferences.setOptionalBackupGmail(email)
+    }
 }

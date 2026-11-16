@@ -13,4 +13,6 @@ interface UserPreferencesRepository {
     suspend fun setAppLanguage(language: String)
     val isMedRemindersEnabled: Flow<Boolean>
     suspend fun setMedRemindersEnabled(enabled: Boolean)
+    val optionalBackupGmail: Flow<String?>
+    suspend fun setOptionalBackupGmail(email: String)
 }

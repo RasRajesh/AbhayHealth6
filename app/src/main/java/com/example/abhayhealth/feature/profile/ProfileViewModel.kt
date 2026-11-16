@@ -161,7 +161,7 @@ class ProfileViewModel(
     fun saveProfile(onSuccess: () -> Unit) {
         val uid = authRepository.currentUser?.uid?.ifBlank { null }
         if (uid == null) {
-            _validationError.value = "Please sign in with Google to save your profile."
+            _validationError.value = "Please sign in to save your profile."
             return
         }
         val name = _fullName.value.trim()

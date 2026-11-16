@@ -10,6 +10,7 @@ import com.google.firebase.firestore.ServerTimestamp
 data class UserAccountDoc(
     @DocumentId val id: String = "",
     val userId: String = "",
+    val phoneNumber: String? = null,
     val email: String? = null,
     val displayName: String? = null,
     @ServerTimestamp val createdAt: Timestamp? = null,

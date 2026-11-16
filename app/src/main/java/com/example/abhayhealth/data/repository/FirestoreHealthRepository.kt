@@ -252,9 +252,14 @@ class FirestoreHealthRepository(
 
     // --- Non-Blocking Persistent Offline Write Queue Enqueue Methods ---
 
-    fun enqueueUserAccount(userId: String, email: String?, displayName: String?) {
+    fun enqueueUserAccount(
+        userId: String,
+        email: String?,
+        displayName: String?,
+        phoneNumber: String? = null
+    ) {
         repoScope.launch {
-            runCatching { ensureUserAccount(userId, email, displayName) }
+            runCatching { ensureUserAccount(userId, email, displayName, phoneNumber) }
         }
     }
 
@@ -314,15 +319,22 @@ class FirestoreHealthRepository(
 
     // --- Account & Profile ---
 
-    suspend fun ensureUserAccount(userId: String, email: String?, displayName: String?) {
+    suspend fun ensureUserAccount(
+        userId: String,
+        email: String?,
+        displayName: String?,
+        phoneNumber: String? = null
+    ) {
         val docRef = userDocRef(userId)
         try {
             val snap = docRef.getOfflineResilient()
+            val cleanPhone = phoneNumber?.trim()?.takeIf { it.isNotEmpty() }?.take(32)
             val cleanEmail = email?.trim()?.takeIf { it.isNotEmpty() }?.take(320)
             val cleanName = displayName?.trim()?.takeIf { it.isNotEmpty() }?.take(120)
             if (snap == null || !snap.exists()) {
                 val createMap = buildMap<String, Any> {
                     put("userId", userId)
+                    cleanPhone?.let { put("phoneNumber", it) }
                     cleanEmail?.let { put("email", it) }
                     cleanName?.let { put("displayName", it) }
                     put("createdAt", FieldValue.serverTimestamp())
@@ -333,11 +345,18 @@ class FirestoreHealthRepository(
                 _syncState.value = _syncState.value.copy(hasPendingWrites = true)
                 task.await()
             } else {
-                val updateMap = mapOf<String, Any>(
-                    "email" to (cleanEmail ?: FieldValue.delete()),
-                    "displayName" to (cleanName ?: FieldValue.delete()),
+                val updateMap = mutableMapOf<String, Any>(
                     "updatedAt" to FieldValue.serverTimestamp()
                 )
+                if (cleanEmail != null) {
+                    updateMap["email"] = cleanEmail
+                }
+                if (cleanName != null) {
+                    updateMap["displayName"] = cleanName
+                }
+                if (cleanPhone != null) {
+                    updateMap["phoneNumber"] = cleanPhone
+                }
                 val task = docRef.update(updateMap)
                     .addOnFailureListener { e -> handleFirestoreError(e, OperationType.WRITE, docRef.path) }
                 _syncState.value = _syncState.value.copy(hasPendingWrites = true)

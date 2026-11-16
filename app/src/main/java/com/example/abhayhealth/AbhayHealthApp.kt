@@ -30,6 +30,7 @@ import com.example.abhayhealth.domain.usecase.GetStartupDestinationUseCase
 import com.example.abhayhealth.feature.assistant.AiAssistantViewModel
 import com.example.abhayhealth.feature.auth.AuthViewModel
 import com.example.abhayhealth.feature.auth.EnterPhoneScreen
+import com.example.abhayhealth.feature.auth.VerifyOtpScreen
 import com.example.abhayhealth.feature.home.HomeViewModel
 import com.example.abhayhealth.feature.me.MeViewModel
 import com.example.abhayhealth.feature.medicines.MedicinesViewModel
@@ -101,11 +102,19 @@ fun AbhayHealthApp(
             ) {
                 if (authenticatedUser == null) {
                     // Unauthenticated root: zero Firestore queries or listeners instantiated
-                    EnterPhoneScreen(
-                        viewModel = authViewModel,
-                        onboardingViewModel = onboardingViewModel,
-                        onBackClick = null
-                    )
+                    val otpUiState by authViewModel.otpUiState.collectAsState()
+                    if (otpUiState.isOtpSent) {
+                        VerifyOtpScreen(
+                            viewModel = authViewModel,
+                            onBackClick = { authViewModel.cancelPhoneOtp() }
+                        )
+                    } else {
+                        EnterPhoneScreen(
+                            viewModel = authViewModel,
+                            onboardingViewModel = onboardingViewModel,
+                            onBackClick = null
+                        )
+                    }
                 } else {
                     val uid = authenticatedUser.uid
                     key(uid) {
@@ -158,7 +167,8 @@ fun AbhayHealthApp(
                                 scope = syncScope,
                                 userId = uid,
                                 email = authenticatedUser.email,
-                                displayName = authenticatedUser.displayName
+                                displayName = authenticatedUser.displayName,
+                                phoneNumber = authenticatedUser.phoneNumber
                             )
                             onDispose {
                                 syncManager.stop()
@@ -278,7 +288,8 @@ fun AbhayHealthApp(
                             patientProfileRepository,
                             medicalRecordDatabase,
                             vitalReadingRepository,
-                            firestoreHealthRepository
+                            firestoreHealthRepository,
+                            syncManager
                         ) {
                             MeViewModel(
                                 userPreferencesRepository = userPreferencesRepository,
@@ -287,7 +298,8 @@ fun AbhayHealthApp(
                                 patientProfileRepository = patientProfileRepository,
                                 medicationDao = medicalRecordDatabase.medicationDao(),
                                 vitalReadingRepository = vitalReadingRepository,
-                                firestoreHealthRepository = firestoreHealthRepository
+                                firestoreHealthRepository = firestoreHealthRepository,
+                                firestoreHealthSyncManager = syncManager
                             )
                         }
                         val aiAssistantViewModel = remember(

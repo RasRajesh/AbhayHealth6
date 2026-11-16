@@ -77,16 +77,17 @@ test("Unauthenticated user: denied read/list/write across all user collections",
 
 // --- 2. Root User Account (/users/{userId}) ---
 
-test("Owner can create, get, update, delete /users/{userId}; cannot list /users", async () => {
+test("Owner can create, get, update, delete /users/{userId}; supports +91 phoneNumber & optional email; cannot list /users", async () => {
   const aliceDb = testEnv.authenticatedContext(ALICE_UID).firestore();
   const createdTs = pastTimestamp(10000);
   const updatedTs = pastTimestamp(2000);
 
   const userRef = aliceDb.collection("users").doc(ALICE_UID);
+  // First-time +91 phone-only login (no Gmail required)
   await assertSucceeds(
     userRef.set({
       userId: ALICE_UID,
-      email: "alice@example.com",
+      phoneNumber: "+919876543210",
       displayName: "Alice",
       createdAt: createdTs,
       updatedAt: updatedTs,
@@ -95,11 +96,20 @@ test("Owner can create, get, update, delete /users/{userId}; cannot list /users"
   await assertSucceeds(userRef.get());
   await assertFails(aliceDb.collection("users").get());
 
-  // Valid update preserving userId & createdAt
+  // Optionally add Gmail later and update displayName while preserving userId & createdAt
   await assertSucceeds(
     userRef.update({
+      email: "alice@gmail.com",
       displayName: "Alice Updated",
       updatedAt: pastTimestamp(500),
+    })
+  );
+
+  // Oversized phoneNumber rejected
+  await assertFails(
+    userRef.update({
+      phoneNumber: "9".repeat(33),
+      updatedAt: pastTimestamp(200),
     })
   );
 

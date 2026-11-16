@@ -45,6 +45,7 @@ service cloud.firestore {
     function isValidUserAccount(data, userId) {
       return data.userId is string && data.userId == userId &&
              data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             isOptionalString(data, 'phoneNumber', 32) &&
              isOptionalString(data, 'email', 320) &&
              isOptionalString(data, 'displayName', 120) &&
              isValidServerTime(data.createdAt) &&
@@ -142,7 +143,7 @@ service cloud.firestore {
       allow create: if isOwner(userId) &&
                        isValidId(userId) &&
                        incoming().keys().hasAll(['userId', 'createdAt', 'updatedAt']) &&
-                       incoming().keys().hasOnly(['userId', 'email', 'displayName', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'phoneNumber', 'email', 'displayName', 'createdAt', 'updatedAt']) &&
                        isValidUserAccount(incoming(), userId);
 
       allow update: if isOwner(userId) &&
@@ -150,7 +151,7 @@ service cloud.firestore {
                        incoming().userId == existing().userId &&
                        incoming().createdAt == existing().createdAt &&
                        isValidUserAccount(incoming(), userId) &&
-                       incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'updatedAt']);
+                       incoming().diff(existing()).affectedKeys().hasOnly(['phoneNumber', 'email', 'displayName', 'updatedAt']);
 
       allow delete: if isOwner(userId) && isValidId(userId);
 

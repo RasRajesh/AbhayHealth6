@@ -69,7 +69,8 @@ class FirestoreHealthSyncManager(
         scope: CoroutineScope,
         userId: String,
         email: String?,
-        displayName: String?
+        displayName: String?,
+        phoneNumber: String? = null
     ) {
         if (activeUid == userId && syncJob?.isActive == true) return
         stop()
@@ -107,7 +108,25 @@ class FirestoreHealthSyncManager(
             }
 
             // Enqueue user account doc without blocking offline startup
-            firestoreRepo.enqueueUserAccount(userId, email, displayName)
+            firestoreRepo.enqueueUserAccount(userId, email, displayName, phoneNumber)
+
+            // Sync optional backup Gmail stored on cloud user doc back into local preferences
+            launch {
+                firestoreRepo.observeUserAccount(userId)
+                    .catch { e ->
+                        if (e is CancellationException) throw e
+                        Log.w(TAG, "User account sync stream error", e)
+                    }
+                    .collect { cloudAccount ->
+                        val cloudEmail = cloudAccount?.email?.trim()?.takeIf { it.isNotEmpty() }
+                        val localBackupGmail = runCatching {
+                            userPreferencesRepository.optionalBackupGmail.first()
+                        }.getOrNull()
+                        if (cloudEmail != null && localBackupGmail.isNullOrBlank()) {
+                            userPreferencesRepository.setOptionalBackupGmail(cloudEmail)
+                        }
+                    }
+            }
 
             // 1. Observe cloud profile (cache + server) -> apply to local DataStore or enqueue local
             launch {
@@ -313,6 +332,42 @@ class FirestoreHealthSyncManager(
         localRecords.filter { it.id > 0L && it.id !in cloudRecordIds }.forEach { record ->
             val info = extractedInfoDao.getExtractedInfoSync(record.id, userId)
             firestoreRepo.enqueueMedicalRecord(record, info)
+        }
+    }
+
+    suspend fun syncAllLocalToCloud(
+        userId: String,
+        email: String?,
+        displayName: String?,
+        phoneNumber: String?
+    ) {
+        runCatching {
+            firestoreRepo.ensureUserAccount(
+                userId = userId,
+                email = email,
+                displayName = displayName,
+                phoneNumber = phoneNumber
+            )
+            profileRepository.getProfile(userId).first()?.let { profile ->
+                firestoreRepo.upsertPatientProfile(profile)
+            }
+            val records = medicalRecordDao.getRecordsByAccount(userId).first()
+            records.filter { it.id > 0L }.forEach { record ->
+                val info = extractedInfoDao.getExtractedInfoSync(record.id, userId)
+                firestoreRepo.upsertMedicalRecord(record, info)
+            }
+            medicationDao.getMedicationsByAccount(userId).first().forEach { med ->
+                firestoreRepo.upsertMedication(med)
+            }
+            vitalReadingDao.getAllReadingsByAccount(userId).first().filter { it.id > 0L }.forEach { vital ->
+                firestoreRepo.upsertVitalReading(vital)
+            }
+            symptomLogDao.getAllSymptoms(userId).first().filter { it.id > 0L }.forEach { symptom ->
+                firestoreRepo.upsertSymptomLog(symptom)
+            }
+            kotlinx.coroutines.withTimeoutOrNull(4_000L) {
+                firestoreRepo.waitForPendingWrites()
+            }
         }
     }
 

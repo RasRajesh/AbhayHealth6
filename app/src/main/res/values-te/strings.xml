@@ -28,18 +28,21 @@
 
     <!-- Welcome / Account Entry Screen -->
     <string name="welcome_title">అభయ్ హెల్త్‌లోకి సైన్ ఇన్ చేయండి</string>
-    <string name="welcome_desc">Google సైన్-ఇన్ &amp; Cloud Firestore ద్వారా మీ ఆరోగ్య సమాచారం సురక్షితంగా సింక్ అవుతుంది.</string>
+    <string name="welcome_desc">మీ +91 మొబైల్ నంబర్ &amp; OTP తో మొదటిసారి సైన్ ఇన్ అవ్వండి. మీ ఆరోగ్య సమాచారం సురక్షితంగా సింక్ అవుతుంది.</string>
     <string name="welcome_btn_continue">Google తో కొనసాగండి</string>
-    <string name="welcome_privacy_notice" formatted="false">🔒 Google సైన్-ఇన్, Firebase App Check &amp; ప్రైవేట్ క్లౌడ్ సింక్ రక్షణ</string>
+    <string name="welcome_btn_continue_optional">Gmail తో కొనసాగండి (ఐచ్ఛికం)</string>
+    <string name="auth_or_optional">లేదా (ఐచ్ఛికం)</string>
+    <string name="auth_gmail_optional_hint">Gmail ఐచ్ఛికం. మీ ఆరోగ్య డేటాను Gmail కు అప్‌లోడ్ చేయడానికి యాప్ లోపల ఎప్పుడైనా జోడించవచ్చు.</string>
+    <string name="welcome_privacy_notice" formatted="false">🔒 మొదటిసారి OTP ధృవీకరణ • Firebase App Check &amp; ప్రైవేట్ సింక్ రక్షణ</string>
 
     <!-- Enter Phone Screen -->
-    <string name="phone_title">మొబైల్ నంబర్‌ను నమోదు చేయండి</string>
-    <string name="phone_subtitle">మీ మొబైల్ నంబర్‌ను ధృవీకరించడానికి మేము 6-అంకెల OTP కోడ్‌ను పంపుతాము.</string>
+    <string name="phone_title">భారత మొబైల్ లాగిన్ (+91)</string>
+    <string name="phone_subtitle">ఒకసారి OTP ధృవీకరణ కోసం మీ 10-అంకెల మొబైల్ నంబర్‌ను నమోదు చేయండి.</string>
     <string name="phone_country_label">దేశం కోడ్</string>
     <string name="phone_number_label">మొబైల్ నంబర్</string>
     <string name="phone_number_hint">ఉదా. 9876543210</string>
     <string name="phone_btn_send_otp">OTP కోడ్‌ను పంపండి</string>
-    <string name="phone_invalid_number">దయచేసి చెల్లుబాటు అయ్యే 10-అంకెల మొబైల్ నంబర్‌ను నమోదు చేయండి.</string>
+    <string name="phone_invalid_number">దయచేసి చెల్లుబాటు అయ్యే 10-అంకెల +91 మొబైల్ నంబర్‌ను నమోదు చేయండి.</string>
     <string name="phone_sending_otp">OTP ధృవీకరణ కోడ్ పంపబడుతోంది…</string>
 
     <!-- Verify OTP Screen -->
@@ -323,4 +326,20 @@
     <string name="dashboard_home_card_title">ఆరోగ్య విశ్లేషణ డ్యాష్‌బోర్డ్</string>
     <string name="dashboard_home_card_sub">Firestore లోని రక్తపోటు &amp; చక్కెర ట్రెండ్‌లను వీక్షించండి</string>
     <string name="dashboard_home_open_btn">డ్యాష్‌బోర్డ్ తెరవండి</string>
+
+    <!-- Optional Gmail Backup & Upload Strings -->
+    <string name="me_gmail_section_title">Gmail క్లౌడ్ బ్యాకప్ (ఐచ్ఛికం)</string>
+    <string name="me_gmail_card_title">ఐచ్ఛిక Gmail ఆరోగ్య బ్యాకప్</string>
+    <string name="me_gmail_not_added">ఇంకా జోడించలేదు (ఐచ్ఛికం)</string>
+    <string name="me_gmail_btn_add_edit">Gmail జోడించండి / లింక్ చేయండి</string>
+    <string name="me_gmail_btn_change">Gmail మార్చండి</string>
+    <string name="me_gmail_btn_upload">Gmail కు డేటా అప్‌లోడ్ చేయండి</string>
+    <string name="me_gmail_uploading">సింక్ అవుతోంది &amp; Gmail బ్యాకప్ సిద్ధమవుతోంది…</string>
+    <string name="me_gmail_dialog_title">ఐచ్ఛిక Gmail జోడించండి లేదా లింక్ చేయండి</string>
+    <string name="me_gmail_dialog_desc">మీ ఆరోగ్య డేటా పూర్తి PDF &amp; క్లౌడ్ బ్యాకప్‌ను అప్‌లోడ్ చేయడానికి మీ Google ఖాతాను లింక్ చేయండి లేదా మీ Gmail నమోదు చేయండి.</string>
+    <string name="me_gmail_btn_link_google">Google ఖాతాను స్వయంచాలకంగా లింక్ చేయండి</string>
+    <string name="me_gmail_or_enter">లేదా మీ Gmail చిరునామాను నమోదు చేయండి</string>
+    <string name="me_gmail_input_label">Gmail చిరునామా</string>
+    <string name="me_gmail_input_hint">ఉదా. yourname@gmail.com</string>
+    <string name="me_gmail_btn_save">బ్యాకప్ Gmail సేవ్ చేయండి</string>
 </resources>

@@ -137,6 +137,7 @@ fun AbhayHealthNavHost(
             VerifyOtpScreen(
                 viewModel = authViewModel,
                 onBackClick = {
+                    authViewModel.cancelPhoneOtp()
                     navController.popBackStack()
                 }
             )
@@ -155,7 +156,7 @@ fun AbhayHealthNavHost(
 
         composable(NavRoutes.PROFILE_EDIT) {
             val authUser = (authState as? AuthState.Authenticated)?.user
-            val accountContact = authUser?.email?.takeIf { it.isNotBlank() } ?: authUser?.phoneNumber
+            val accountContact = authUser?.phoneNumber?.takeIf { it.isNotBlank() } ?: authUser?.email
             ProfileEditScreen(
                 viewModel = profileViewModel,
                 userPhone = accountContact,
