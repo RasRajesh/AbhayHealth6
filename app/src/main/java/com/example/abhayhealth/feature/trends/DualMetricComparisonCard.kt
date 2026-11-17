@@ -21,10 +21,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Tune
@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -111,7 +112,7 @@ fun DualMetricComparisonCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.CompareArrows,
+                            imageVector = Icons.AutoMirrored.Filled.CompareArrows,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
@@ -520,7 +521,7 @@ private fun DualAxisRechartsCanvas(
             // Left Y-Axis Labels (Metric 1)
             drawContext.canvas.nativeCanvas.apply {
                 val paint1 = android.graphics.Paint().apply {
-                    color = color1.hashCode()
+                    color = color1.toArgb()
                     textSize = 22f
                     isAntiAlias = true
                     textAlign = android.graphics.Paint.Align.RIGHT
@@ -530,7 +531,7 @@ private fun DualAxisRechartsCanvas(
 
                 // Right Y-Axis Labels (Metric 2)
                 val paint2 = android.graphics.Paint().apply {
-                    color = color2.hashCode()
+                    color = color2.toArgb()
                     textSize = 22f
                     isAntiAlias = true
                     textAlign = android.graphics.Paint.Align.LEFT
@@ -540,7 +541,7 @@ private fun DualAxisRechartsCanvas(
 
                 // X-Axis Date Labels along bottom
                 val datePaint = android.graphics.Paint().apply {
-                    color = onSurfaceColor.hashCode()
+                    color = onSurfaceColor.toArgb()
                     textSize = 22f
                     isAntiAlias = true
                     textAlign = android.graphics.Paint.Align.CENTER

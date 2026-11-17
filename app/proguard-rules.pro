@@ -14,8 +14,11 @@
 # Preserve Data Models for Navigation and Preferences
 -keep class com.example.abhayhealth.domain.model.** { *; }
 
-# Keep Firebase Auth classes
+# Keep Firebase Auth & Firestore POJO models used via DocumentSnapshot.toObject()
 -keep class com.google.firebase.auth.** { *; }
+-keep class com.example.abhayhealth.data.remote.** { *; }
+-keepattributes Signature
+-keepattributes *Annotation*
 
 # Also keep ML Kit text recognition
 -keep class com.google.mlkit.vision.text.** { *; }

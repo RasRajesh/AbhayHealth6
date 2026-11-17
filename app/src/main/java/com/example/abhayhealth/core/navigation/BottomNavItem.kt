@@ -16,7 +16,7 @@ import com.example.abhayhealth.R
  */
 sealed class BottomNavItem(
     val route: String,
-    @StringRes val titleRes: Int,
+    @param:StringRes val titleRes: Int,
     val icon: ImageVector
 ) {
     data object Home : BottomNavItem(
