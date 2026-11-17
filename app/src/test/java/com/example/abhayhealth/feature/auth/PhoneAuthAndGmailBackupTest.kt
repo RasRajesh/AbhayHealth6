@@ -3,8 +3,15 @@ package com.example.abhayhealth.feature.auth
 import com.example.abhayhealth.data.repository.FirebaseAuthRepository
 import com.example.abhayhealth.domain.model.PhoneOtpUiState
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.FirebaseException
+import com.google.firebase.auth.FirebaseAuthException
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(manifest = Config.NONE, sdk = [35])
 class PhoneAuthAndGmailBackupTest {
 
     @Test
@@ -59,5 +66,22 @@ class PhoneAuthAndGmailBackupTest {
 
         val sent = initial.copy(verificationId = "verif_abc_123")
         assertThat(sent.isOtpSent).isTrue()
+    }
+
+    @Test
+    fun formatPhoneAuthError_translatesRecaptchaAndConsoleConfigErrorsClearly() {
+        val recaptchaEx = FirebaseException("No Recaptcha Enterprise siteKey configured for tenant/project *")
+        val recaptchaMsg = FirebaseAuthRepository.formatPhoneAuthError(recaptchaEx)
+        assertThat(recaptchaMsg).contains("reCAPTCHA Enterprise")
+        assertThat(recaptchaMsg).contains("Continue with Gmail (Optional)")
+
+        val opNotAllowed = FirebaseAuthException("ERROR_OPERATION_NOT_ALLOWED", "Phone provider disabled")
+        val opMsg = FirebaseAuthRepository.formatPhoneAuthError(opNotAllowed)
+        assertThat(opMsg).contains("not yet enabled")
+        assertThat(opMsg).contains("Continue with Gmail (Optional)")
+
+        val missingClientId = FirebaseAuthException("ERROR_MISSING_CLIENT_IDENTIFIER", "Client validation failed")
+        val clientMsg = FirebaseAuthRepository.formatPhoneAuthError(missingClientId)
+        assertThat(clientMsg).contains("reCAPTCHA Enterprise")
     }
 }
