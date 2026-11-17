@@ -342,4 +342,25 @@
     <string name="me_gmail_input_label">Gmail చిరునామా</string>
     <string name="me_gmail_input_hint">ఉదా. yourname@gmail.com</string>
     <string name="me_gmail_btn_save">బ్యాకప్ Gmail సేవ్ చేయండి</string>
+
+    <!-- Firestore Health Metrics Doctor PDF & Medicine Intake History Strings -->
+    <string name="dashboard_share_pdf_btn">డాక్టర్ PDF</string>
+    <string name="metrics_pdf_dialog_title">ఆరోగ్య పురోగతి PDF పంచుకోండి</string>
+    <string name="metrics_pdf_dialog_subtitle">వైద్యుల కోసం Cloud Firestore కొలతలు &amp; మందుల చరిత్ర</string>
+    <string name="metrics_pdf_timeframe_label">సారాంశ సమయ వ్యవధి</string>
+    <string name="metrics_pdf_generating">Cloud Firestore కొలతలు తెచ్చి PDF తయారు చేస్తోంది…</string>
+    <string name="metrics_pdf_btn_share">వైద్యునితో PDF పంచుకోండి</string>
+    <string name="metrics_pdf_btn_view">PDF చూడండి</string>
+    <string name="metrics_pdf_btn_print">ప్రింట్</string>
+    <string name="metrics_pdf_btn_save">PDF సేవ్</string>
+    <string name="metrics_pdf_saved_toast">ఆరోగ్య కొలతల PDF పరికరంలో సేవ్ చేయబడింది!</string>
+    <string name="me_item_metrics_pdf_title">డాక్టర్ పురోగతి PDF (Firestore)</string>
+    <string name="me_item_metrics_pdf_sub">BP, చక్కెర, బరువు చార్ట్‌లు &amp; మందుల వాడకం చరిత్ర</string>
+    <string name="meds_btn_log_taken">తీసుకున్నట్లు నమోదు</string>
+    <string name="meds_intake_history_title">మందుల వాడకం చరిత్ర (భద్రపరచబడినది)</string>
+    <string name="meds_intake_history_sub">భవిష్యత్తు మరియు డాక్టర్ సందర్శనల కోసం Cloud Firestore తో సింక్ చేయబడింది</string>
+    <string name="meds_intake_empty_title">ఇంకా మందుల మోతాదు నమోదు కాలేదు</string>
+    <string name="meds_intake_empty_desc">భవిష్యత్తు కోసం మీ మందుల చరిత్రను సేవ్ చేయడానికి ఏదైనా మందుపై చెక్ లేదా తీసుకున్నట్లు నమోదు నొక్కండి.</string>
+    <string name="meds_intake_status_taken">తీసుకున్నారు</string>
+    <string name="meds_intake_status_skipped">వదిలివేశారు</string>
 </resources>

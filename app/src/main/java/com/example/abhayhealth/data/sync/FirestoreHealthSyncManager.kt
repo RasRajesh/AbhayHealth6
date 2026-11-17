@@ -6,6 +6,7 @@ import com.example.abhayhealth.core.firebase.FirestoreClientProvider
 import com.example.abhayhealth.data.remote.FirestoreHealthRepository
 import com.example.abhayhealth.data.remote.MedicalRecordDoc
 import com.example.abhayhealth.data.remote.MedicationDoc
+import com.example.abhayhealth.data.remote.MedicineIntakeLogDoc
 import com.example.abhayhealth.data.remote.PatientProfileDoc
 import com.example.abhayhealth.data.remote.SymptomLogDoc
 import com.example.abhayhealth.data.remote.VitalReadingDoc
@@ -13,6 +14,8 @@ import com.example.abhayhealth.domain.model.PatientProfile
 import com.example.abhayhealth.domain.repository.PatientProfileRepository
 import com.example.abhayhealth.domain.repository.UserPreferencesRepository
 import com.example.abhayhealth.feature.medicines.MedicationDao
+import com.example.abhayhealth.feature.medicines.MedicineIntakeLogDao
+import com.example.abhayhealth.feature.medicines.MedicineIntakeLogEntity
 import com.example.abhayhealth.feature.medicines.PrescriptionMedicationEntity
 import com.example.abhayhealth.feature.records.ExtractedInfoDao
 import com.example.abhayhealth.feature.records.ExtractedMedicalInfo
@@ -57,7 +60,8 @@ class FirestoreHealthSyncManager(
     private val medicationDao: MedicationDao,
     private val vitalReadingDao: VitalReadingDao,
     private val symptomLogDao: SymptomLogDao,
-    private val appContext: Context? = null
+    private val appContext: Context? = null,
+    private val medicineIntakeLogDao: MedicineIntakeLogDao? = null
 ) {
     private var syncJob: Job? = null
     private var activeUid: String? = null
@@ -78,6 +82,7 @@ class FirestoreHealthSyncManager(
 
         val knownRecordIds = mutableSetOf<Long>()
         val knownMedicationIds = mutableSetOf<String>()
+        val knownIntakeLogIds = mutableSetOf<String>()
         val knownVitalIds = mutableSetOf<Long>()
         val knownSymptomIds = mutableSetOf<Long>()
         var didBackfill = false
@@ -324,6 +329,40 @@ class FirestoreHealthSyncManager(
                         }
                     }
             }
+
+            // 6. Observe cloud medicine intake logs -> apply to Room
+            medicineIntakeLogDao?.let { intakeDao ->
+                launch {
+                    firestoreRepo.observeMedicineIntakeLogs(userId)
+                        .catch { e ->
+                            if (e is CancellationException) throw e
+                            Log.w(TAG, "Medicine intake logs sync stream error", e)
+                        }
+                        .collect { cloudLogs ->
+                            val currentIds = mutableSetOf<String>()
+                            cloudLogs.forEach { doc ->
+                                currentIds.add(doc.id)
+                                val existing = intakeDao.getLogByIdSync(doc.id, userId)
+                                val mapped = doc.toEntity(userId)
+                                if (existing != mapped) {
+                                    intakeDao.insertOrUpdate(mapped)
+                                }
+                            }
+                            val removedIds = knownIntakeLogIds - currentIds
+                            removedIds.forEach { removedId ->
+                                intakeDao.deleteLog(removedId, userId)
+                            }
+                            knownIntakeLogIds.clear()
+                            knownIntakeLogIds.addAll(currentIds)
+
+                            // Queue any purely local intake logs into Firestore offline persistent cache
+                            val localLogs = intakeDao.getLogsByAccountSync(userId)
+                            localLogs.filter { it.id !in currentIds }.forEach { missing ->
+                                firestoreRepo.enqueueMedicineIntakeLog(missing)
+                            }
+                        }
+                }
+            }
         }
     }
 
@@ -358,6 +397,9 @@ class FirestoreHealthSyncManager(
             }
             medicationDao.getMedicationsByAccount(userId).first().forEach { med ->
                 firestoreRepo.upsertMedication(med)
+            }
+            medicineIntakeLogDao?.getLogsByAccountSync(userId)?.forEach { log ->
+                firestoreRepo.upsertMedicineIntakeLog(log)
             }
             vitalReadingDao.getAllReadingsByAccount(userId).first().filter { it.id > 0L }.forEach { vital ->
                 firestoreRepo.upsertVitalReading(vital)
@@ -434,5 +476,17 @@ class FirestoreHealthSyncManager(
         notes = notes,
         triggers = triggers,
         durationMinutes = durationMinutes
+    )
+
+    private fun MedicineIntakeLogDoc.toEntity(uid: String) = MedicineIntakeLogEntity(
+        id = id,
+        accountUid = uid,
+        medicationId = medicationId,
+        medicationName = medicationName,
+        dosage = dosage,
+        timeSlot = timeSlot,
+        takenAtTimestamp = takenAtTimestamp,
+        status = status,
+        notes = notes
     )
 }

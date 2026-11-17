@@ -135,6 +135,20 @@ service cloud.firestore {
              isValidServerTime(data.updatedAt);
     }
 
+    function isValidMedicineIntakeLogDoc(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.medicationId is string && data.medicationId.size() >= 1 && data.medicationId.size() <= 128 &&
+             data.medicationName is string && data.medicationName.size() >= 1 && data.medicationName.size() <= 160 &&
+             data.dosage is string && data.dosage.size() >= 1 && data.dosage.size() <= 160 &&
+             data.timeSlot is string && data.timeSlot.size() >= 1 && data.timeSlot.size() <= 64 &&
+             data.takenAtTimestamp is int && data.takenAtTimestamp >= 0 &&
+             data.status in ['TAKEN', 'SKIPPED'] &&
+             data.notes is string && data.notes.size() <= 500 &&
+             isValidServerTime(data.createdAt) &&
+             isValidServerTime(data.updatedAt);
+    }
+
     // --- Collection Rules ---
     match /users/{userId} {
       allow get: if isOwner(userId) && isValidId(userId);
@@ -314,6 +328,39 @@ service cloud.firestore {
                          ]);
 
         allow delete: if isOwner(userId) && isValidId(symptomId);
+      }
+
+      // Persistent Medicine Intake Logs (Historical Adherence)
+      match /medicine_intake_logs/{logId} {
+        allow get: if isOwner(userId) && isValidId(logId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(logId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'medicationId', 'medicationName', 'dosage',
+                           'timeSlot', 'takenAtTimestamp', 'status', 'notes',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'medicationId', 'medicationName', 'dosage',
+                           'timeSlot', 'takenAtTimestamp', 'status', 'notes',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidMedicineIntakeLogDoc(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(logId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().medicationId == existing().medicationId &&
+                         isValidMedicineIntakeLogDoc(incoming(), userId) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'medicationName', 'dosage', 'timeSlot', 'takenAtTimestamp',
+                           'status', 'notes', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(logId);
       }
     }
   }

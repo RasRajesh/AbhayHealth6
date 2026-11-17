@@ -6,6 +6,7 @@ import com.example.abhayhealth.core.firebase.FirestoreClientProvider
 import com.example.abhayhealth.core.firebase.OperationType
 import com.example.abhayhealth.core.firebase.handleFirestoreError
 import com.example.abhayhealth.domain.model.PatientProfile
+import com.example.abhayhealth.feature.medicines.MedicineIntakeLogEntity
 import com.example.abhayhealth.feature.medicines.PrescriptionMedicationEntity
 import com.example.abhayhealth.feature.records.ExtractedMedicalInfo
 import com.example.abhayhealth.feature.records.MedicalRecord
@@ -20,6 +21,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.SnapshotMetadata
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.snapshots
@@ -94,6 +96,9 @@ class FirestoreHealthRepository(
 
     private fun symptomsCollection(userId: String) =
         userDocRef(userId).collection("symptoms")
+
+    private fun medicineIntakeLogsCollection(userId: String) =
+        userDocRef(userId).collection("medicine_intake_logs")
 
     // --- Real-time & Offline-Cached Streams (MetadataChanges.INCLUDE) ---
 
@@ -219,6 +224,73 @@ class FirestoreHealthRepository(
             }
     }
 
+    fun observeMedicineIntakeLogs(userId: String): Flow<List<MedicineIntakeLogDoc>> {
+        val col = medicineIntakeLogsCollection(userId)
+        return col.orderBy("takenAtTimestamp", Query.Direction.DESCENDING)
+            .snapshots(MetadataChanges.INCLUDE)
+            .map { snapshot ->
+                recordSnapshotMetadata(snapshot.metadata)
+                snapshot.toObjects(MedicineIntakeLogDoc::class.java, ServerTimestampBehavior.ESTIMATE)
+            }
+            .catch { error ->
+                val firestoreError = error.unwrapFirestoreException()
+                if (firestoreError != null) {
+                    if (isActiveUser(userId)) {
+                        handleFirestoreError(firestoreError, OperationType.LIST, col.path)
+                    }
+                    throw firestoreError
+                }
+                throw error
+            }
+    }
+
+    /**
+     * Fetches the authenticated user's complete health metrics snapshot directly from
+     * Cloud Firestore (using local SQLite persistent cache seamlessly when offline)
+     * for doctor-shareable clinical progress PDF summaries.
+     */
+    suspend fun fetchFirestoreHealthSnapshot(userId: String): FirestoreHealthSnapshot {
+        val accountSnap = runCatching { userDocRef(userId).getOfflineResilient() }.getOrNull()
+        val profileSnap = runCatching { profileDocRef(userId).getOfflineResilient() }.getOrNull()
+        val vitalsSnap = runCatching {
+            vitalsCollection(userId).orderBy("timestamp", Query.Direction.ASCENDING).getOfflineResilient()
+        }.getOrNull()
+        val medsSnap = runCatching {
+            medicationsCollection(userId).orderBy("createdAtTimestamp", Query.Direction.ASCENDING).getOfflineResilient()
+        }.getOrNull()
+        val intakeSnap = runCatching {
+            medicineIntakeLogsCollection(userId).orderBy("takenAtTimestamp", Query.Direction.DESCENDING).getOfflineResilient()
+        }.getOrNull()
+        val symptomsSnap = runCatching {
+            symptomsCollection(userId).orderBy("timestamp", Query.Direction.DESCENDING).getOfflineResilient()
+        }.getOrNull()
+        val recordsSnap = runCatching {
+            recordsCollection(userId).orderBy("recordDate", Query.Direction.DESCENDING).getOfflineResilient()
+        }.getOrNull()
+
+        val anyFromCache = listOfNotNull(
+            accountSnap?.metadata?.isFromCache,
+            profileSnap?.metadata?.isFromCache,
+            vitalsSnap?.metadata?.isFromCache,
+            medsSnap?.metadata?.isFromCache,
+            intakeSnap?.metadata?.isFromCache
+        ).any { it }
+
+        return FirestoreHealthSnapshot(
+            userAccount = accountSnap?.takeIf { it.exists() }
+                ?.toObject(UserAccountDoc::class.java, ServerTimestampBehavior.ESTIMATE),
+            patientProfile = profileSnap?.takeIf { it.exists() }
+                ?.toObject(PatientProfileDoc::class.java, ServerTimestampBehavior.ESTIMATE),
+            vitals = vitalsSnap?.toObjects(VitalReadingDoc::class.java, ServerTimestampBehavior.ESTIMATE).orEmpty(),
+            medications = medsSnap?.toObjects(MedicationDoc::class.java, ServerTimestampBehavior.ESTIMATE).orEmpty(),
+            medicineIntakeLogs = intakeSnap?.toObjects(MedicineIntakeLogDoc::class.java, ServerTimestampBehavior.ESTIMATE).orEmpty(),
+            symptoms = symptomsSnap?.toObjects(SymptomLogDoc::class.java, ServerTimestampBehavior.ESTIMATE).orEmpty(),
+            medicalRecords = recordsSnap?.toObjects(MedicalRecordDoc::class.java, ServerTimestampBehavior.ESTIMATE).orEmpty(),
+            isFromCache = anyFromCache,
+            fetchedAtMillis = System.currentTimeMillis()
+        )
+    }
+
     // --- Network & Offline Persistence Controls ---
 
     suspend fun waitForPendingWrites() {
@@ -314,6 +386,18 @@ class FirestoreHealthRepository(
     fun enqueueDeleteSymptomLog(userId: String, localSymptomId: Long) {
         repoScope.launch {
             runCatching { deleteSymptomLog(userId, localSymptomId) }
+        }
+    }
+
+    fun enqueueMedicineIntakeLog(log: MedicineIntakeLogEntity) {
+        repoScope.launch {
+            runCatching { upsertMedicineIntakeLog(log) }
+        }
+    }
+
+    fun enqueueDeleteMedicineIntakeLog(userId: String, logId: String) {
+        repoScope.launch {
+            runCatching { deleteMedicineIntakeLog(userId, logId) }
         }
     }
 
@@ -730,12 +814,86 @@ class FirestoreHealthRepository(
         }
     }
 
+    // --- Medicine Intake Logs (Persistent History) ---
+
+    suspend fun upsertMedicineIntakeLog(log: MedicineIntakeLogEntity) {
+        val docId = sanitizeId(log.id)
+        val docRef = medicineIntakeLogsCollection(log.accountUid).document(docId)
+        val cleanMedId = sanitizeId(log.medicationId)
+        val cleanName = log.medicationName.trim().ifBlank { "Medication" }.take(160)
+        val cleanDosage = log.dosage.trim().ifBlank { "1 Tablet" }.take(160)
+        val cleanSlot = log.timeSlot.trim().ifBlank { "MORNING (08:30)" }.take(64)
+        val cleanStatus = if (log.status.equals(MedicineIntakeLogEntity.STATUS_SKIPPED, ignoreCase = true)) {
+            MedicineIntakeLogEntity.STATUS_SKIPPED
+        } else {
+            MedicineIntakeLogEntity.STATUS_TAKEN
+        }
+        val cleanNotes = log.notes.take(500)
+
+        try {
+            val snap = docRef.getOfflineResilient()
+            if (snap == null || !snap.exists()) {
+                val createMap = mapOf<String, Any>(
+                    "userId" to log.accountUid,
+                    "medicationId" to cleanMedId,
+                    "medicationName" to cleanName,
+                    "dosage" to cleanDosage,
+                    "timeSlot" to cleanSlot,
+                    "takenAtTimestamp" to log.takenAtTimestamp.coerceAtLeast(0L),
+                    "status" to cleanStatus,
+                    "notes" to cleanNotes,
+                    "createdAt" to FieldValue.serverTimestamp(),
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+                val task = docRef.set(createMap)
+                    .addOnFailureListener { e -> handleFirestoreError(e, OperationType.WRITE, docRef.path) }
+                _syncState.value = _syncState.value.copy(hasPendingWrites = true)
+                task.await()
+            } else {
+                val updateMap = mapOf<String, Any>(
+                    "medicationName" to cleanName,
+                    "dosage" to cleanDosage,
+                    "timeSlot" to cleanSlot,
+                    "takenAtTimestamp" to log.takenAtTimestamp.coerceAtLeast(0L),
+                    "status" to cleanStatus,
+                    "notes" to cleanNotes,
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+                val task = docRef.update(updateMap)
+                    .addOnFailureListener { e -> handleFirestoreError(e, OperationType.WRITE, docRef.path) }
+                _syncState.value = _syncState.value.copy(hasPendingWrites = true)
+                task.await()
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            handleFirestoreError(e, OperationType.WRITE, docRef.path)
+            throw e
+        }
+    }
+
+    suspend fun deleteMedicineIntakeLog(userId: String, logId: String) {
+        val docRef = medicineIntakeLogsCollection(userId).document(sanitizeId(logId))
+        try {
+            val task = docRef.delete()
+                .addOnFailureListener { e -> handleFirestoreError(e, OperationType.DELETE, docRef.path) }
+            _syncState.value = _syncState.value.copy(hasPendingWrites = true)
+            task.await()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            handleFirestoreError(e, OperationType.DELETE, docRef.path)
+            throw e
+        }
+    }
+
     // --- Complete Account Deletion ---
 
     suspend fun deleteAllUserData(userId: String) {
         val collections = listOf(
             recordsCollection(userId),
             medicationsCollection(userId),
+            medicineIntakeLogsCollection(userId),
             vitalsCollection(userId),
             symptomsCollection(userId)
         )
@@ -806,6 +964,33 @@ class FirestoreHealthRepository(
     }
 
     private suspend fun DocumentReference.getFromCacheOrNull(): DocumentSnapshot? {
+        return try {
+            get(Source.CACHE).await()
+        } catch (e: FirebaseFirestoreException) {
+            if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+                null
+            } else {
+                throw e
+            }
+        }
+    }
+
+    private suspend fun Query.getOfflineResilient(): QuerySnapshot? {
+        return try {
+            val cachedOrServer = withTimeoutOrNull(SERVER_LOOKUP_TIMEOUT_MS) {
+                get(Source.DEFAULT).await()
+            }
+            cachedOrServer ?: getFromCacheOrNull()
+        } catch (e: FirebaseFirestoreException) {
+            if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+                getFromCacheOrNull()
+            } else {
+                throw e
+            }
+        }
+    }
+
+    private suspend fun Query.getFromCacheOrNull(): QuerySnapshot? {
         return try {
             get(Source.CACHE).await()
         } catch (e: FirebaseFirestoreException) {

@@ -352,4 +352,25 @@
     <string name="me_gmail_input_label">Gmail Address</string>
     <string name="me_gmail_input_hint">e.g. yourname@gmail.com</string>
     <string name="me_gmail_btn_save">Save Backup Gmail</string>
+
+    <!-- Firestore Health Metrics Doctor PDF & Medicine Intake History Strings -->
+    <string name="dashboard_share_pdf_btn">Doctor PDF</string>
+    <string name="metrics_pdf_dialog_title">Share Health Progress PDF</string>
+    <string name="metrics_pdf_dialog_subtitle">Cloud Firestore metrics &amp; medicine history formatted for doctors</string>
+    <string name="metrics_pdf_timeframe_label">Summary Timeframe</string>
+    <string name="metrics_pdf_generating">Fetching Cloud Firestore metrics &amp; building A4 PDF…</string>
+    <string name="metrics_pdf_btn_share">Share PDF with Doctor</string>
+    <string name="metrics_pdf_btn_view">View PDF</string>
+    <string name="metrics_pdf_btn_print">Print</string>
+    <string name="metrics_pdf_btn_save">Save PDF</string>
+    <string name="metrics_pdf_saved_toast">Health metrics PDF saved to device!</string>
+    <string name="me_item_metrics_pdf_title">Doctor Progress PDF (Firestore)</string>
+    <string name="me_item_metrics_pdf_sub">BP, Glucose, Weight charts &amp; medicine intake history</string>
+    <string name="meds_btn_log_taken">Log Taken</string>
+    <string name="meds_intake_history_title">Medicine Intake History (Stored)</string>
+    <string name="meds_intake_history_sub">Synced with Cloud Firestore for doctor visits &amp; future review</string>
+    <string name="meds_intake_empty_title">No doses logged yet</string>
+    <string name="meds_intake_empty_desc">Tap the check icon or Log Taken on any medicine to store your intake history for future doctor visits.</string>
+    <string name="meds_intake_status_taken">TAKEN</string>
+    <string name="meds_intake_status_skipped">SKIPPED</string>
 </resources>

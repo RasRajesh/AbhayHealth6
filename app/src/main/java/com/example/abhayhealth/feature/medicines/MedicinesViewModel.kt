@@ -29,13 +29,17 @@ class MedicinesViewModel(
     private val authRepository: AuthRepository? = null,
     context: Context? = null,
     private val dispatcherProvider: DispatcherProvider = DefaultDispatcherProvider(),
-    private val firestoreHealthRepository: FirestoreHealthRepository? = null
+    private val firestoreHealthRepository: FirestoreHealthRepository? = null,
+    private val medicineIntakeLogDao: MedicineIntakeLogDao? = null
 ) : ViewModel() {
 
     private val appContext: Context? = context?.applicationContext
 
     private val _medications = MutableStateFlow<List<PrescriptionMedication>>(emptyList())
     val medications: StateFlow<List<PrescriptionMedication>> = _medications.asStateFlow()
+
+    private val _intakeLogs = MutableStateFlow<List<MedicineIntakeLogEntity>>(emptyList())
+    val intakeLogs: StateFlow<List<MedicineIntakeLogEntity>> = _intakeLogs.asStateFlow()
 
     private val _showAddDialog = MutableStateFlow(false)
     val showAddDialog: StateFlow<Boolean> = _showAddDialog.asStateFlow()
@@ -47,6 +51,7 @@ class MedicinesViewModel(
     val editingMedication: StateFlow<PrescriptionMedication?> = _editingMedication.asStateFlow()
 
     private var observeJob: Job? = null
+    private var observeLogsJob: Job? = null
 
     init {
         appContext?.let { ctx ->
@@ -66,10 +71,43 @@ class MedicinesViewModel(
                 val uid = if (state is AuthState.Authenticated) state.user.uid else getCurrentUid()
                 if (uid == null) {
                     observeJob?.cancel()
+                    observeLogsJob?.cancel()
                     _medications.value = emptyList()
+                    _intakeLogs.value = emptyList()
                     return@collectLatest
                 }
                 observeMedicationsForUid(uid)
+                observeIntakeLogsForUid(uid)
+            }
+        }
+    }
+
+    private fun observeIntakeLogsForUid(uid: String) {
+        val logDao = medicineIntakeLogDao
+        observeLogsJob?.cancel()
+        if (logDao != null) {
+            observeLogsJob = viewModelScope.launch(dispatcherProvider.main) {
+                logDao.observeLogsByAccount(uid).collectLatest { logs ->
+                    _intakeLogs.value = logs
+                }
+            }
+        } else if (firestoreHealthRepository != null) {
+            observeLogsJob = viewModelScope.launch(dispatcherProvider.main) {
+                firestoreHealthRepository.observeMedicineIntakeLogs(uid).collectLatest { cloudLogs ->
+                    _intakeLogs.value = cloudLogs.map { doc ->
+                        MedicineIntakeLogEntity(
+                            id = doc.id,
+                            accountUid = uid,
+                            medicationId = doc.medicationId,
+                            medicationName = doc.medicationName,
+                            dosage = doc.dosage,
+                            timeSlot = doc.timeSlot,
+                            takenAtTimestamp = doc.takenAtTimestamp,
+                            status = doc.status,
+                            notes = doc.notes
+                        )
+                    }
+                }
             }
         }
     }
@@ -199,11 +237,66 @@ class MedicinesViewModel(
         viewModelScope.launch(dispatcherProvider.main) {
             val updated = withContext(dispatcherProvider.io) {
                 dao.toggleDoseTaken(id, uid)
-                dao.getMedicationByIdSync(id, uid)
+                val med = dao.getMedicationByIdSync(id, uid)
+                if (med != null && med.isTaken) {
+                    val intakeLog = MedicineIntakeLogEntity(
+                        accountUid = uid,
+                        medicationId = med.id,
+                        medicationName = med.name,
+                        dosage = med.dosage,
+                        timeSlot = med.timeSlot,
+                        takenAtTimestamp = System.currentTimeMillis(),
+                        status = MedicineIntakeLogEntity.STATUS_TAKEN,
+                        notes = "Recorded from daily schedule"
+                    )
+                    medicineIntakeLogDao?.insertOrUpdate(intakeLog)
+                    firestoreHealthRepository?.enqueueMedicineIntakeLog(intakeLog)
+                }
+                med
             }
             if (updated != null) {
                 firestoreHealthRepository?.enqueueMedication(updated)
             }
+        }
+    }
+
+    fun logMedicineDoseForFuture(
+        medication: PrescriptionMedication,
+        status: String = MedicineIntakeLogEntity.STATUS_TAKEN,
+        notes: String = ""
+    ) {
+        val uid = getCurrentUid() ?: return
+        val logEntry = MedicineIntakeLogEntity(
+            accountUid = uid,
+            medicationId = medication.id,
+            medicationName = medication.name,
+            dosage = medication.dosage,
+            timeSlot = medication.timeSlot,
+            takenAtTimestamp = System.currentTimeMillis(),
+            status = status,
+            notes = notes.trim()
+        )
+        viewModelScope.launch(dispatcherProvider.main) {
+            withContext(dispatcherProvider.io) {
+                medicineIntakeLogDao?.insertOrUpdate(logEntry)
+                if (status == MedicineIntakeLogEntity.STATUS_TAKEN) {
+                    medicationDao?.markDoseTaken(medication.id)
+                    medicationDao?.getMedicationByIdSync(medication.id, uid)?.let { updatedMed ->
+                        firestoreHealthRepository?.enqueueMedication(updatedMed)
+                    }
+                }
+            }
+            firestoreHealthRepository?.enqueueMedicineIntakeLog(logEntry)
+        }
+    }
+
+    fun deleteIntakeLog(logId: String) {
+        val uid = getCurrentUid() ?: return
+        viewModelScope.launch(dispatcherProvider.main) {
+            withContext(dispatcherProvider.io) {
+                medicineIntakeLogDao?.deleteLog(logId, uid)
+            }
+            firestoreHealthRepository?.enqueueDeleteMedicineIntakeLog(uid, logId)
         }
     }
 

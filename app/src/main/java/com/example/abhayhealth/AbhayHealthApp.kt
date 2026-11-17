@@ -156,7 +156,8 @@ fun AbhayHealthApp(
                                 medicationDao = medicalRecordDatabase.medicationDao(),
                                 vitalReadingDao = medicalRecordDatabase.vitalReadingDao(),
                                 symptomLogDao = medicalRecordDatabase.symptomLogDao(),
-                                appContext = appContext
+                                appContext = appContext,
+                                medicineIntakeLogDao = medicalRecordDatabase.medicineIntakeLogDao()
                             )
                         }
                         val cloudSyncStatus by syncManager.syncStatus.collectAsState()
@@ -258,14 +259,19 @@ fun AbhayHealthApp(
                             authRepository,
                             symptomLogRepository,
                             vitalReadingRepository,
-                            firestoreHealthRepository
+                            firestoreHealthRepository,
+                            medicalRecordDatabase,
+                            patientProfileRepository
                         ) {
                             TrendsViewModel(
                                 medicalRecordRepository = medicalRecordRepository,
                                 authRepository = authRepository,
                                 symptomLogRepository = symptomLogRepository,
                                 vitalReadingRepository = vitalReadingRepository,
-                                firestoreHealthRepository = firestoreHealthRepository
+                                firestoreHealthRepository = firestoreHealthRepository,
+                                medicineIntakeLogDao = medicalRecordDatabase.medicineIntakeLogDao(),
+                                patientProfileRepository = patientProfileRepository,
+                                medicationDao = medicalRecordDatabase.medicationDao()
                             )
                         }
                         val medicinesViewModel = remember(
@@ -278,7 +284,8 @@ fun AbhayHealthApp(
                                 medicationDao = medicalRecordDatabase.medicationDao(),
                                 authRepository = authRepository,
                                 context = appContext,
-                                firestoreHealthRepository = firestoreHealthRepository
+                                firestoreHealthRepository = firestoreHealthRepository,
+                                medicineIntakeLogDao = medicalRecordDatabase.medicineIntakeLogDao()
                             )
                         }
                         val meViewModel = remember(
@@ -299,7 +306,8 @@ fun AbhayHealthApp(
                                 medicationDao = medicalRecordDatabase.medicationDao(),
                                 vitalReadingRepository = vitalReadingRepository,
                                 firestoreHealthRepository = firestoreHealthRepository,
-                                firestoreHealthSyncManager = syncManager
+                                firestoreHealthSyncManager = syncManager,
+                                medicineIntakeLogDao = medicalRecordDatabase.medicineIntakeLogDao()
                             )
                         }
                         val aiAssistantViewModel = remember(
