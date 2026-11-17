@@ -363,4 +363,8 @@
     <string name="meds_intake_empty_desc">భవిష్యత్తు కోసం మీ మందుల చరిత్రను సేవ్ చేయడానికి ఏదైనా మందుపై చెక్ లేదా తీసుకున్నట్లు నమోదు నొక్కండి.</string>
     <string name="meds_intake_status_taken">తీసుకున్నారు</string>
     <string name="meds_intake_status_skipped">వదిలివేశారు</string>
+    <string name="ai_language_label">సహాయకుడి భాష</string>
+    <string name="ai_language_english">English (ఇంగ్లీష్)</string>
+    <string name="ai_language_telugu">తెలుగు (Telugu)</string>
+    <string name="ai_new_session">కొత్త చాట్</string>
 </resources>
