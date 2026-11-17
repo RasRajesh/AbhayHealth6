@@ -58,6 +58,7 @@ import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -68,8 +69,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -99,6 +98,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.abhayhealth.R
@@ -423,6 +423,12 @@ private fun AssistantHeader(
     onClearChat: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isTelugu = selectedLanguage == "Telugu"
+    var languageMenuExpanded by remember { mutableStateOf(false) }
+    val englishLabel = stringResource(id = R.string.ai_language_english)
+    val teluguLabel = stringResource(id = R.string.ai_language_telugu)
+    val currentLanguageDisplay = if (isTelugu) teluguLabel else englishLabel
+
     Surface(
         tonalElevation = 3.dp,
         color = MaterialTheme.colorScheme.surface,
@@ -440,6 +446,7 @@ private fun AssistantHeader(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
@@ -457,56 +464,182 @@ private fun AssistantHeader(
                             )
                         }
                     }
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (selectedLanguage == "Telugu") "AI ఆరోగ్య సహాయకుడు" else "AI Health Assistant",
+                            text = if (isTelugu) "AI ఆరోగ్య సహాయకుడు" else "AI Health Assistant",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = if (selectedLanguage == "Telugu") "క్లినికల్ విశ్లేషణ & ఆడియో స్పీకర్" else "Clinical Synthesis & Audio Reader",
+                            text = if (isTelugu) "క్లినికల్ విశ్లేషణ & ఆడియో స్పీకర్" else "Clinical Synthesis & Audio Reader",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                IconButton(
+                    onClick = onClearChat,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .testTag("ai_new_session_button")
                 ) {
-                    IconButton(
-                        onClick = onClearChat,
-                        modifier = Modifier.size(34.dp)
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = stringResource(id = R.string.ai_new_session),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+
+            // Always-visible Language Selector Dropdown (English / తెలుగు)
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("ai_language_selector_bar"),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "New Session",
+                            imageVector = Icons.Default.Translate,
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = stringResource(id = R.string.ai_language_label),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
-                    FilterChip(
-                        selected = selectedLanguage == "English",
-                        onClick = { onLanguageSelected("English") },
-                        label = { Text("English", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    )
+                    Box {
+                        Surface(
+                            onClick = { languageMenuExpanded = !languageMenuExpanded },
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)),
+                            modifier = Modifier
+                                .heightIn(min = 48.dp)
+                                .testTag("ai_language_dropdown_trigger")
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = currentLanguageDisplay,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    maxLines = 1
+                                )
+                                Icon(
+                                    imageVector = if (languageMenuExpanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                                    contentDescription = if (isTelugu) "భాషను ఎంచుకోండి" else "Select assistant language",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
 
-                    FilterChip(
-                        selected = selectedLanguage == "Telugu",
-                        onClick = { onLanguageSelected("Telugu") },
-                        label = { Text("తెలుగు", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    )
+                        DropdownMenu(
+                            expanded = languageMenuExpanded,
+                            onDismissRequest = { languageMenuExpanded = false },
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.surface)
+                                .testTag("ai_language_dropdown_menu")
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = englishLabel,
+                                        fontWeight = if (!isTelugu) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (!isTelugu) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Translate,
+                                        contentDescription = null,
+                                        tint = if (!isTelugu) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                },
+                                trailingIcon = if (!isTelugu) {
+                                    {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = "Selected",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                } else null,
+                                onClick = {
+                                    onLanguageSelected("English")
+                                    languageMenuExpanded = false
+                                },
+                                modifier = Modifier.testTag("ai_language_option_english")
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = teluguLabel,
+                                        fontWeight = if (isTelugu) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isTelugu) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Translate,
+                                        contentDescription = null,
+                                        tint = if (isTelugu) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                },
+                                trailingIcon = if (isTelugu) {
+                                    {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = "Selected",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                } else null,
+                                onClick = {
+                                    onLanguageSelected("Telugu")
+                                    languageMenuExpanded = false
+                                },
+                                modifier = Modifier.testTag("ai_language_option_telugu")
+                            )
+                        }
+                    }
                 }
             }
         }

@@ -373,4 +373,8 @@
     <string name="meds_intake_empty_desc">Tap the check icon or Log Taken on any medicine to store your intake history for future doctor visits.</string>
     <string name="meds_intake_status_taken">TAKEN</string>
     <string name="meds_intake_status_skipped">SKIPPED</string>
+    <string name="ai_language_label">Assistant Language</string>
+    <string name="ai_language_english">English</string>
+    <string name="ai_language_telugu">తెలుగు (Telugu)</string>
+    <string name="ai_new_session">New Session</string>
 </resources>

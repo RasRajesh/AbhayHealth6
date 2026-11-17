@@ -708,6 +708,7 @@ class AiAssistantViewModel(
             userPreferencesRepository.setAppLanguage(language)
         }
         initConversation(language)
+        saveChatSession()
     }
 
     fun speakExecutiveSummary() {
