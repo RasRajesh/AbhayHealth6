@@ -16,13 +16,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Medication
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.AlertDialog
@@ -223,7 +223,7 @@ fun ExportReportDialog(
                                     Spacer(modifier = Modifier.height(10.dp))
 
                                     ReportScopeItem(
-                                        icon = Icons.Default.ReceiptLong,
+                                        icon = Icons.AutoMirrored.Filled.ReceiptLong,
                                         title = "Medical History & Lab Results",
                                         description = "$recordCount diagnostic documents with structured test parameters"
                                     )

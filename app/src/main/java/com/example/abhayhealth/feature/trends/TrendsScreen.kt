@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
@@ -40,7 +41,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -163,7 +164,7 @@ fun TrendsScreen(
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        ScrollableTabRow(
+        PrimaryScrollableTabRow(
             selectedTabIndex = selectedTabIndex,
             edgePadding = 0.dp,
             divider = {}
@@ -542,7 +543,7 @@ private fun BiomarkerRechartsCanvas(
                 val dateLabel = points[i].first.recordDate
                 drawContext.canvas.nativeCanvas.apply {
                     val paint = android.graphics.Paint().apply {
-                        color = onSurfaceColor.hashCode()
+                        color = onSurfaceColor.toArgb()
                         textSize = 24f
                         isAntiAlias = true
                         textAlign = when (i) {

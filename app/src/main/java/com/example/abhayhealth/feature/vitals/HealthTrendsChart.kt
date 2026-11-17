@@ -25,11 +25,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bloodtype
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -55,6 +55,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -118,7 +119,7 @@ fun HealthTrendsChartCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ShowChart,
+                            imageVector = Icons.AutoMirrored.Filled.ShowChart,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(20.dp)
@@ -542,7 +543,7 @@ private fun RechartsCanvasChart(
                     chartPaddingLeft - 10.dp.toPx(),
                     gridY + 4.dp.toPx(),
                     android.graphics.Paint().apply {
-                        color = textPaintColor.hashCode()
+                        color = textPaintColor.toArgb()
                         textSize = 10.sp.toPx()
                         textAlign = android.graphics.Paint.Align.RIGHT
                         isAntiAlias = true
@@ -565,7 +566,7 @@ private fun RechartsCanvasChart(
                     size.width - chartPaddingRight,
                     refY - 4.dp.toPx(),
                     android.graphics.Paint().apply {
-                        color = guideLineColor.hashCode()
+                        color = guideLineColor.toArgb()
                         textSize = 9.sp.toPx()
                         textAlign = android.graphics.Paint.Align.RIGHT
                         isAntiAlias = true
@@ -642,7 +643,7 @@ private fun RechartsCanvasChart(
                         x,
                         size.height - 8.dp.toPx(),
                         android.graphics.Paint().apply {
-                            color = textPaintColor.hashCode()
+                            color = textPaintColor.toArgb()
                             textSize = 10.sp.toPx()
                             textAlign = android.graphics.Paint.Align.CENTER
                             isAntiAlias = true
