@@ -3,6 +3,7 @@ package com.example.abhayhealth.data.repository
 import com.example.abhayhealth.base.FirestoreEmulatorTestBase
 import com.example.abhayhealth.data.remote.FirestoreHealthRepository
 import com.example.abhayhealth.domain.model.PatientProfile
+import com.example.abhayhealth.feature.medicines.MedicineIntakeLogEntity
 import com.example.abhayhealth.feature.medicines.PrescriptionMedicationEntity
 import com.example.abhayhealth.feature.records.ExtractedMedicalInfo
 import com.example.abhayhealth.feature.records.MedicalRecord
@@ -22,7 +23,8 @@ class FirestoreHealthRepositoryRuleTest : FirestoreEmulatorTestBase() {
 
     @Test
     fun ensureUserAccount_and_upsertPatientProfile_ownerCanWriteAndObserveRealtime() = runBlocking {
-        val aliceUid = signInTestUser(ALICE_EMAIL)
+        val freshEmail = "alice_phone_${UUID.randomUUID().toString().take(8)}@test.com"
+        val aliceUid = signInTestUser(freshEmail)
         val repository = FirestoreHealthRepository(firestore)
 
         withTimeout(DEFAULT_TIMEOUT_MS) {
@@ -69,16 +71,16 @@ class FirestoreHealthRepositoryRuleTest : FirestoreEmulatorTestBase() {
         withTimeout(DEFAULT_TIMEOUT_MS) {
             repository.ensureUserAccount(
                 userId = aliceUid,
-                email = ALICE_EMAIL,
+                email = freshEmail,
                 displayName = "Alice Patient",
                 phoneNumber = null
             )
         }
         val linkedAccountDoc = withTimeout(FLOW_TIMEOUT_MS) {
-            repository.observeUserAccount(aliceUid).first { it?.email == ALICE_EMAIL }
+            repository.observeUserAccount(aliceUid).first { it?.email == freshEmail }
         }
         assertThat(linkedAccountDoc?.phoneNumber).isEqualTo("+919876543210")
-        assertThat(linkedAccountDoc?.email).isEqualTo(ALICE_EMAIL)
+        assertThat(linkedAccountDoc?.email).isEqualTo(freshEmail)
 
         withTimeout(DEFAULT_TIMEOUT_MS) {
             repository.upsertPatientProfile(
@@ -361,12 +363,85 @@ class FirestoreHealthRepositoryRuleTest : FirestoreEmulatorTestBase() {
         val symptomsAfter = withTimeout(FLOW_TIMEOUT_MS) {
             repository.observeSymptoms(aliceUid).first { it.isEmpty() }
         }
+        val intakeAfter = withTimeout(FLOW_TIMEOUT_MS) {
+            repository.observeMedicineIntakeLogs(aliceUid).first { it.isEmpty() }
+        }
 
         assertThat(profileAfter).isNull()
         assertThat(recordsAfter).isEmpty()
         assertThat(medsAfter).isEmpty()
         assertThat(vitalsAfter).isEmpty()
         assertThat(symptomsAfter).isEmpty()
+        assertThat(intakeAfter).isEmpty()
+    }
+
+    @Test
+    fun medicineIntakeLogs_ownerCanPersistObserveAndFetchHealthSnapshot_crossUserDenied() = runBlocking {
+        val aliceUid = signInTestUser(ALICE_EMAIL)
+        val repository = FirestoreHealthRepository(firestore)
+        val logId = "intake_${UUID.randomUUID().toString().replace("-", "_")}"
+
+        val intakeLog = MedicineIntakeLogEntity(
+            id = logId,
+            accountUid = aliceUid,
+            medicationId = "med_metformin_1",
+            medicationName = "Metformin",
+            dosage = "500mg",
+            timeSlot = "MORNING (08:30)",
+            takenAtTimestamp = 1750000000000L,
+            status = MedicineIntakeLogEntity.STATUS_TAKEN,
+            notes = "After breakfast"
+        )
+
+        withTimeout(DEFAULT_TIMEOUT_MS) {
+            repository.ensureUserAccount(aliceUid, ALICE_EMAIL, "Alice Snapshot", "+919876543210")
+            repository.upsertVitalReading(
+                VitalReadingEntity(
+                    id = 801L,
+                    accountUid = aliceUid,
+                    type = VitalType.BLOOD_PRESSURE.name,
+                    systolic = 118.0,
+                    diastolic = 76.0,
+                    timestamp = 1750000000000L
+                )
+            )
+            repository.upsertMedicineIntakeLog(intakeLog)
+        }
+
+        val observedLogs = withTimeout(FLOW_TIMEOUT_MS) {
+            repository.observeMedicineIntakeLogs(aliceUid).first { list -> list.any { it.id == logId } }
+        }
+        assertThat(observedLogs.first { it.id == logId }.medicationName).isEqualTo("Metformin")
+
+        val snapshot = withTimeout(DEFAULT_TIMEOUT_MS) {
+            repository.fetchFirestoreHealthSnapshot(aliceUid)
+        }
+        assertThat(snapshot.medicineIntakeLogs.any { it.id == logId }).isTrue()
+        assertThat(snapshot.vitals.any { it.localVitalId == 801L }).isTrue()
+
+        // Cross-user Bob denied
+        signInTestUser(BOB_EMAIL)
+        val crossReadError = assertThrowsException {
+            withTimeout(FLOW_TIMEOUT_MS) { repository.observeMedicineIntakeLogs(aliceUid).first() }
+        }
+        assertThat(crossReadError.unwrapFirestoreException()?.code)
+            .isEqualTo(FirebaseFirestoreException.Code.PERMISSION_DENIED)
+
+        val crossWriteError = assertThrowsException {
+            withTimeout(DEFAULT_TIMEOUT_MS) { repository.upsertMedicineIntakeLog(intakeLog) }
+        }
+        assertThat(crossWriteError.unwrapFirestoreException()?.code)
+            .isEqualTo(FirebaseFirestoreException.Code.PERMISSION_DENIED)
+
+        // Cleanup as owner Alice
+        signInTestUser(ALICE_EMAIL)
+        withTimeout(DEFAULT_TIMEOUT_MS) {
+            repository.deleteMedicineIntakeLog(aliceUid, logId)
+        }
+        val afterDelete = withTimeout(FLOW_TIMEOUT_MS) {
+            repository.observeMedicineIntakeLogs(aliceUid).first { list -> list.none { it.id == logId } }
+        }
+        assertThat(afterDelete.none { it.id == logId }).isTrue()
     }
 
     private suspend fun assertThrowsException(block: suspend () -> Unit): Exception {

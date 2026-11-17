@@ -54,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -61,6 +62,8 @@ import androidx.compose.ui.unit.dp
 import com.example.abhayhealth.R
 import com.example.abhayhealth.core.designsystem.components.AbhayHealthBrandLogo
 import com.example.abhayhealth.core.designsystem.components.EmptyStateContent
+import com.example.abhayhealth.feature.medicines.MedicineIntakeHistorySection
+import com.example.abhayhealth.feature.records.export.ShareHealthMetricsPdfDialog
 import com.example.abhayhealth.feature.symptoms.AddSymptomDialog
 import com.example.abhayhealth.feature.symptoms.SymptomTrendsComponent
 import com.example.abhayhealth.feature.vitals.AddVitalReadingDialog
@@ -71,6 +74,7 @@ fun TrendsScreen(
     modifier: Modifier = Modifier,
     onBackClick: (() -> Unit)? = null
 ) {
+    val context = LocalContext.current
     val dashboardState by viewModel.dashboardState.collectAsState()
     val labTrends by viewModel.labTrends.collectAsState()
     val vitalsTrends by viewModel.vitalsTrends.collectAsState()
@@ -78,9 +82,15 @@ fun TrendsScreen(
     val dualComparison by viewModel.dualComparison.collectAsState()
     val availableMetrics by viewModel.availableComparisonMetrics.collectAsState()
     val symptoms by viewModel.symptoms.collectAsState()
+    val intakeLogs by viewModel.intakeLogs.collectAsState()
+    val activeMedications by viewModel.activeMedications.collectAsState()
     val showAddSymptomDialog by viewModel.showAddSymptomDialog.collectAsState()
     val showAddVitalDialog by viewModel.showAddVitalDialog.collectAsState()
     val initialVitalMetric by viewModel.initialVitalMetric.collectAsState()
+    val showMetricsPdfDialog by viewModel.showMetricsPdfDialog.collectAsState()
+    val metricsPdfState by viewModel.metricsPdfState.collectAsState()
+    val pdfSelectedRange by viewModel.pdfSelectedRange.collectAsState()
+    val pdfPreviewCounts by viewModel.pdfPreviewCounts.collectAsState()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabTitles = listOf(
@@ -107,6 +117,22 @@ fun TrendsScreen(
             onDismiss = { viewModel.dismissAddSymptomDialog() },
             onSave = { name, severity, score, notes, triggers, duration ->
                 viewModel.logSymptom(name, severity, score, notes, triggers, duration)
+            }
+        )
+    }
+
+    if (showMetricsPdfDialog) {
+        ShareHealthMetricsPdfDialog(
+            state = metricsPdfState,
+            selectedRange = pdfSelectedRange,
+            counts = pdfPreviewCounts,
+            onSelectRange = { viewModel.setPdfSelectedRange(it) },
+            onDismiss = { viewModel.dismissMetricsPdfDialog() },
+            onShareClick = { viewModel.shareDoctorMetricsPdf(context) },
+            onViewClick = { viewModel.viewDoctorMetricsPdf(context) },
+            onPrintClick = { viewModel.printDoctorMetricsPdf(context) },
+            onSaveToUri = { uri, onReady ->
+                viewModel.saveDoctorMetricsPdfToUri(context, uri, onReady)
             }
         )
     }
@@ -186,7 +212,8 @@ fun TrendsScreen(
                 HealthAnalyticsDashboard(
                     state = dashboardState,
                     onSelectRange = { viewModel.setTimeRange(it) },
-                    onLogVitalClick = { metric -> viewModel.openAddVitalDialog(metric) }
+                    onLogVitalClick = { metric -> viewModel.openAddVitalDialog(metric) },
+                    onSharePdfClick = { viewModel.openMetricsPdfDialog() }
                 )
             }
             3 -> {
@@ -221,24 +248,17 @@ fun TrendsScreen(
                 }
             }
             5 -> {
-                // Adherence Tab
+                // Adherence & Stored Medicine Intake History Tab
                 LazyColumn(
-                    contentPadding = PaddingValues(bottom = 16.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surface
-                            )
-                        ) {
-                            EmptyStateContent(
-                                title = stringResource(id = R.string.trends_empty_adherence_title),
-                                description = stringResource(id = R.string.trends_empty_adherence_desc),
-                                icon = Icons.AutoMirrored.Filled.TrendingUp
-                            )
-                        }
+                        MedicineIntakeHistorySection(
+                            intakeLogs = intakeLogs,
+                            onDeleteLog = { logId -> viewModel.deleteIntakeLog(logId) },
+                            activeMedicationCount = activeMedications.size
+                        )
                     }
                 }
             }

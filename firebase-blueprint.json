@@ -354,6 +354,68 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "MedicineIntakeLogDoc": {
+      "title": "MedicineIntakeLogDoc",
+      "description": "Cloud-synced persistent history of each medicine dose taken or skipped for longitudinal adherence tracking and doctor PDF summaries.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID."
+        },
+        "medicationId": {
+          "type": "string",
+          "description": "Identifier of the parent PrescriptionMedicationEntity."
+        },
+        "medicationName": {
+          "type": "string",
+          "description": "Medication name at the time the dose was logged."
+        },
+        "dosage": {
+          "type": "string",
+          "description": "Dosage taken."
+        },
+        "timeSlot": {
+          "type": "string",
+          "description": "Scheduled daily slot label."
+        },
+        "takenAtTimestamp": {
+          "type": "integer",
+          "description": "Epoch millis when the medicine dose was logged."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["TAKEN", "SKIPPED"],
+          "description": "Intake status for this dose event."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional intake notes."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "medicationId",
+        "medicationName",
+        "dosage",
+        "timeSlot",
+        "takenAtTimestamp",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -392,6 +454,12 @@
         "$ref": "#/entities/SymptomLogDoc"
       },
       "description": "Per-user symptom log entries."
+    },
+    "/users/{userId}/medicine_intake_logs/{logId}": {
+      "schema": {
+        "$ref": "#/entities/MedicineIntakeLogDoc"
+      },
+      "description": "Per-user persistent timestamped medicine intake logs for future adherence history and clinical PDF reporting."
     }
   }
 }

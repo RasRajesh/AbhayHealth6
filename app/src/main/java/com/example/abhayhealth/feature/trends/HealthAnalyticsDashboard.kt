@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -83,6 +84,7 @@ fun HealthAnalyticsDashboard(
     state: HealthDashboardUiState,
     onSelectRange: (DashboardTimeRange) -> Unit,
     onLogVitalClick: (VitalType) -> Unit,
+    onSharePdfClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -97,7 +99,8 @@ fun HealthAnalyticsDashboard(
             DashboardTelemetryHeaderCard(
                 state = state,
                 onSelectRange = onSelectRange,
-                onLogVitalClick = { onLogVitalClick(VitalType.BLOOD_PRESSURE) }
+                onLogVitalClick = { onLogVitalClick(VitalType.BLOOD_PRESSURE) },
+                onSharePdfClick = onSharePdfClick
             )
         }
 
@@ -144,7 +147,8 @@ fun HealthAnalyticsDashboard(
 private fun DashboardTelemetryHeaderCard(
     state: HealthDashboardUiState,
     onSelectRange: (DashboardTimeRange) -> Unit,
-    onLogVitalClick: () -> Unit
+    onLogVitalClick: () -> Unit,
+    onSharePdfClick: (() -> Unit)? = null
 ) {
     val isPending = state.syncState.hasPendingWrites
     val isFromCache = state.syncState.isFromCache
@@ -243,7 +247,8 @@ private fun DashboardTelemetryHeaderCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 DashboardTimeRange.entries.forEach { range ->
                     FilterChip(
@@ -257,6 +262,31 @@ private fun DashboardTelemetryHeaderCard(
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.testTag("dashboard_range_${range.shortLabel.lowercase()}")
                     )
+                }
+
+                if (onSharePdfClick != null) {
+                    Spacer(modifier = Modifier.weight(1f, fill = false))
+                    OutlinedButton(
+                        onClick = onSharePdfClick,
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier
+                            .height(36.dp)
+                            .testTag("dashboard_share_pdf_btn")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PictureAsPdf,
+                            contentDescription = stringResource(id = R.string.dashboard_share_pdf_btn),
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = stringResource(id = R.string.dashboard_share_pdf_btn),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1
+                        )
+                    }
                 }
             }
         }

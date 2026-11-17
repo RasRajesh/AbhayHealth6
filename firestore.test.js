@@ -72,6 +72,9 @@ test("Unauthenticated user: denied read/list/write across all user collections",
   await assertFails(
     unauthDb.collection("users").doc(ALICE_UID).collection("symptoms").get()
   );
+  await assertFails(
+    unauthDb.collection("users").doc(ALICE_UID).collection("medicine_intake_logs").get()
+  );
   await assertFails(unauthDb.collection("unknown_collection").doc("x").get());
 });
 
@@ -402,4 +405,74 @@ test("Symptoms: owner CRUD, severity enum & range 1..4, cross-user denial", asyn
   // Cross-user rejected
   await assertFails(bobDb.collection("users").doc(ALICE_UID).collection("symptoms").get());
   await assertSucceeds(symRef.delete());
+});
+
+// --- 8. Medicine Intake Logs (/users/{userId}/medicine_intake_logs/{logId}) ---
+
+test("Medicine intake logs: owner CRUD, status enum, immutable medicationId, cross-user denial", async () => {
+  const aliceDb = testEnv.authenticatedContext(ALICE_UID).firestore();
+  const bobDb = testEnv.authenticatedContext(BOB_UID).firestore();
+  const logRef = aliceDb.collection("users").doc(ALICE_UID).collection("medicine_intake_logs").doc("intake_1");
+
+  await assertSucceeds(
+    logRef.set({
+      userId: ALICE_UID,
+      medicationId: "med_abc-1",
+      medicationName: "Metformin",
+      dosage: "500mg after breakfast",
+      timeSlot: "MORNING (08:30)",
+      takenAtTimestamp: 1700000000000,
+      status: "TAKEN",
+      notes: "Taken on schedule",
+      createdAt: pastTimestamp(12000),
+      updatedAt: pastTimestamp(4000),
+    })
+  );
+
+  await assertSucceeds(
+    aliceDb
+      .collection("users")
+      .doc(ALICE_UID)
+      .collection("medicine_intake_logs")
+      .orderBy("takenAtTimestamp", "desc")
+      .get()
+  );
+
+  await assertSucceeds(
+    logRef.update({
+      status: "SKIPPED",
+      notes: "Felt nauseous",
+      updatedAt: pastTimestamp(500),
+    })
+  );
+
+  // Invalid status enum rejected
+  await assertFails(
+    logRef.update({
+      status: "UNKNOWN",
+      updatedAt: pastTimestamp(400),
+    })
+  );
+
+  // Immutable medicationId rejected
+  await assertFails(
+    logRef.update({
+      medicationId: "med_hijacked",
+      updatedAt: pastTimestamp(300),
+    })
+  );
+
+  // Oversized notes rejected
+  await assertFails(
+    logRef.update({
+      notes: "x".repeat(501),
+      updatedAt: pastTimestamp(200),
+    })
+  );
+
+  // Cross-user read & write rejected
+  await assertFails(bobDb.collection("users").doc(ALICE_UID).collection("medicine_intake_logs").get());
+  await assertFails(bobDb.collection("users").doc(ALICE_UID).collection("medicine_intake_logs").doc("intake_1").delete());
+
+  await assertSucceeds(logRef.delete());
 });

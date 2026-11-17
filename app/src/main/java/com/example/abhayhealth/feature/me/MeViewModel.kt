@@ -1,12 +1,14 @@
 package com.example.abhayhealth.feature.me
 
 import android.content.Context
+import android.net.Uri
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.abhayhealth.core.common.DefaultDispatcherProvider
 import com.example.abhayhealth.core.common.DispatcherProvider
 import com.example.abhayhealth.data.remote.FirestoreHealthRepository
+import com.example.abhayhealth.data.remote.FirestoreHealthSnapshot
 import com.example.abhayhealth.data.repository.FirebaseAuthRepository
 import com.example.abhayhealth.data.sync.FirestoreHealthSyncManager
 import com.example.abhayhealth.domain.model.AuthState
@@ -14,10 +16,15 @@ import com.example.abhayhealth.domain.repository.AuthRepository
 import com.example.abhayhealth.domain.repository.PatientProfileRepository
 import com.example.abhayhealth.domain.repository.UserPreferencesRepository
 import com.example.abhayhealth.feature.medicines.MedicationDao
+import com.example.abhayhealth.feature.medicines.MedicineIntakeLogDao
+import com.example.abhayhealth.feature.medicines.MedicineIntakeLogEntity
 import com.example.abhayhealth.feature.records.DocumentImportManager
 import com.example.abhayhealth.feature.records.MedicalRecordRepository
 import com.example.abhayhealth.feature.records.export.ExportReportState
+import com.example.abhayhealth.feature.records.export.HealthMetricsPdfGenerator
+import com.example.abhayhealth.feature.records.export.HealthMetricsPdfPreviewCounts
 import com.example.abhayhealth.feature.records.export.MedicalReportExportManager
+import com.example.abhayhealth.feature.trends.DashboardTimeRange
 import com.example.abhayhealth.feature.vitals.VitalReadingRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -40,7 +47,8 @@ class MeViewModel(
     private val medicationDao: MedicationDao? = null,
     private val vitalReadingRepository: VitalReadingRepository? = null,
     private val firestoreHealthRepository: FirestoreHealthRepository? = null,
-    private val firestoreHealthSyncManager: FirestoreHealthSyncManager? = null
+    private val firestoreHealthSyncManager: FirestoreHealthSyncManager? = null,
+    private val medicineIntakeLogDao: MedicineIntakeLogDao? = null
 ) : ViewModel() {
 
     val patientName: StateFlow<String?> = userPreferencesRepository.patientName.stateIn(
@@ -140,6 +148,21 @@ class MeViewModel(
 
     private val _vitalCount = MutableStateFlow(0)
     val vitalCount: StateFlow<Int> = _vitalCount.asStateFlow()
+
+    private val _intakeLogCount = MutableStateFlow(0)
+    val intakeLogCount: StateFlow<Int> = _intakeLogCount.asStateFlow()
+
+    private val _showMetricsPdfDialog = MutableStateFlow(false)
+    val showMetricsPdfDialog: StateFlow<Boolean> = _showMetricsPdfDialog.asStateFlow()
+
+    private val _metricsPdfState = MutableStateFlow<ExportReportState>(ExportReportState.Idle)
+    val metricsPdfState: StateFlow<ExportReportState> = _metricsPdfState.asStateFlow()
+
+    private val _pdfSelectedRange = MutableStateFlow(DashboardTimeRange.ALL)
+    val pdfSelectedRange: StateFlow<DashboardTimeRange> = _pdfSelectedRange.asStateFlow()
+
+    private val _pdfPreviewCounts = MutableStateFlow(HealthMetricsPdfPreviewCounts())
+    val pdfPreviewCounts: StateFlow<HealthMetricsPdfPreviewCounts> = _pdfPreviewCounts.asStateFlow()
 
     private val _patientProfile = MutableStateFlow<com.example.abhayhealth.domain.model.PatientProfile?>(null)
     val patientProfile: StateFlow<com.example.abhayhealth.domain.model.PatientProfile?> = _patientProfile.asStateFlow()
@@ -274,6 +297,10 @@ class MeViewModel(
                     val records = runCatching { medicalRecordRepository.getRecords(user.uid).first() }.getOrElse { emptyList() }
                     val meds = runCatching { medDao.getMedicationsByAccount(user.uid).first() }.getOrElse { emptyList() }
                     val vitals = runCatching { vitalRepo.getAllReadings(user.uid).first() }.getOrElse { emptyList() }
+                    val takenDoses = runCatching {
+                        medicineIntakeLogDao?.getLogsByAccountSync(user.uid)
+                            ?.count { it.status == MedicineIntakeLogEntity.STATUS_TAKEN } ?: 0
+                    }.getOrDefault(0)
 
                     val resolvedName = profile?.fullName?.ifBlank { null } ?: "Patient"
                     val summary = buildString {
@@ -289,6 +316,7 @@ class MeViewModel(
                         appendLine("Summary Counts:")
                         appendLine("- Medical Records: ${records.size}")
                         appendLine("- Active Medications: ${meds.size}")
+                        appendLine("- Stored Doses Taken: $takenDoses")
                         appendLine("- Logged Vitals: ${vitals.size}")
                         profile?.bloodGroup?.takeIf { it.isNotBlank() }?.let {
                             appendLine("- Blood Group: $it")
@@ -350,9 +378,145 @@ class MeViewModel(
                 vitalReadingRepository?.getAllReadings(uid)?.first()?.let {
                     _vitalCount.value = it.size
                 }
+                withContext(dispatcherProvider.io) {
+                    medicineIntakeLogDao?.getLogsByAccountSync(uid)?.count {
+                        it.status == MedicineIntakeLogEntity.STATUS_TAKEN
+                    } ?: 0
+                }.let { taken ->
+                    _intakeLogCount.value = taken
+                }
+                refreshMetricsPdfPreview(uid)
             } catch (_: Exception) {}
         }
     }
+
+    fun openMetricsPdfDialog() {
+        val uid = authRepository.currentUser?.uid?.ifBlank { null } ?: return
+        _metricsPdfState.value = ExportReportState.Idle
+        _showMetricsPdfDialog.value = true
+        refreshMetricsPdfPreview(uid)
+    }
+
+    fun dismissMetricsPdfDialog() {
+        _showMetricsPdfDialog.value = false
+        _metricsPdfState.value = ExportReportState.Idle
+    }
+
+    fun setPdfSelectedRange(range: DashboardTimeRange) {
+        _pdfSelectedRange.value = range
+        authRepository.currentUser?.uid?.ifBlank { null }?.let { refreshMetricsPdfPreview(it) }
+    }
+
+    private fun refreshMetricsPdfPreview(uid: String) {
+        viewModelScope.launch(dispatcherProvider.main) {
+            val counts = withContext(dispatcherProvider.io) {
+                val vitals = runCatching { vitalReadingRepository?.getAllReadings(uid)?.first() }.getOrElse { emptyList() }.orEmpty()
+                val meds = runCatching { medicationDao?.getMedicationsByAccount(uid)?.first() }.getOrElse { emptyList() }.orEmpty()
+                val logs = runCatching { medicineIntakeLogDao?.getLogsByAccountSync(uid) }.getOrElse { emptyList() }.orEmpty()
+                val extracted = runCatching { medicalRecordRepository.getAllExtractedInfo(uid).first() }.getOrElse { emptyList() }
+                val recs = runCatching { medicalRecordRepository.getRecords(uid).first() }.getOrElse { emptyList() }
+                val synthetic = MedicalReportExportManager.mergeWithLocalFallback(
+                    snapshot = FirestoreHealthSnapshot(),
+                    userId = uid,
+                    fallbackVitals = vitals,
+                    fallbackMedications = meds,
+                    fallbackIntakeLogs = logs,
+                    fallbackRecords = recs,
+                    fallbackExtractedInfos = extracted
+                )
+                HealthMetricsPdfGenerator.computePreviewCounts(synthetic, _pdfSelectedRange.value)
+            }
+            _pdfPreviewCounts.value = counts
+        }
+    }
+
+    fun shareDoctorMetricsPdf(context: Context) {
+        generateMetricsPdf(context) { result ->
+            MedicalReportExportManager.sharePdfFile(
+                context = context,
+                file = result.file,
+                subject = "AbhayHealth Doctor Progress Summary",
+                message = "Sharing Firestore health metrics (Blood Pressure, Glucose, Weight) & medicine intake history from AbhayHealth.",
+                chooserTitle = "Share Progress PDF with Doctor"
+            )
+        }
+    }
+
+    fun viewDoctorMetricsPdf(context: Context) {
+        generateMetricsPdf(context) { result ->
+            MedicalReportExportManager.viewPdfFile(context, result.file)
+        }
+    }
+
+    fun printDoctorMetricsPdf(context: Context) {
+        generateMetricsPdf(context) { result ->
+            MedicalReportExportManager.printPdfFile(context, result.file)
+        }
+    }
+
+    fun saveDoctorMetricsPdfToUri(
+        context: Context,
+        @Suppress("UNUSED_PARAMETER") destinationUri: Uri,
+        onReady: (File) -> Unit
+    ) {
+        generateMetricsPdf(context) { result ->
+            onReady(result.file)
+        }
+    }
+
+    private fun generateMetricsPdf(
+        context: Context,
+        onReady: (com.example.abhayhealth.feature.records.export.HealthMetricsPdfReportResult) -> Unit
+    ) {
+        val uid = authRepository.currentUser?.uid?.ifBlank { null }
+        if (uid == null) {
+            _metricsPdfState.value = ExportReportState.Error("Please sign in to export health metrics summary.")
+            return
+        }
+        viewModelScope.launch(dispatcherProvider.main) {
+            _metricsPdfState.value = ExportReportState.Generating
+            try {
+                val (profile, vitals, meds, logs, recs, extracted) = withContext(dispatcherProvider.io) {
+                    val p = runCatching { patientProfileRepository.getProfile(uid).first() }.getOrNull()
+                    val v = runCatching { vitalReadingRepository?.getAllReadings(uid)?.first() }.getOrElse { emptyList() }.orEmpty()
+                    val m = runCatching { medicationDao?.getMedicationsByAccount(uid)?.first() }.getOrElse { emptyList() }.orEmpty()
+                    val l = runCatching { medicineIntakeLogDao?.getLogsByAccountSync(uid) }.getOrElse { emptyList() }.orEmpty()
+                    val r = runCatching { medicalRecordRepository.getRecords(uid).first() }.getOrElse { emptyList() }
+                    val e = runCatching { medicalRecordRepository.getAllExtractedInfo(uid).first() }.getOrElse { emptyList() }
+                    MeMetricsBundle(p, v, m, l, r, e)
+                }
+
+                val result = MedicalReportExportManager.generateFirestoreMetricsPdfReport(
+                    context = context.applicationContext,
+                    firestoreHealthRepository = firestoreHealthRepository,
+                    userId = uid,
+                    timeRange = _pdfSelectedRange.value,
+                    fallbackProfile = profile,
+                    fallbackVitals = vitals,
+                    fallbackMedications = meds,
+                    fallbackIntakeLogs = logs,
+                    fallbackRecords = recs,
+                    fallbackExtractedInfos = extracted
+                )
+                _pdfPreviewCounts.value = result.counts
+                _metricsPdfState.value = ExportReportState.Success(result.file)
+                onReady(result)
+            } catch (e: Exception) {
+                _metricsPdfState.value = ExportReportState.Error(
+                    e.localizedMessage ?: "Failed to generate health metrics PDF summary."
+                )
+            }
+        }
+    }
+
+    private data class MeMetricsBundle(
+        val profile: com.example.abhayhealth.domain.model.PatientProfile?,
+        val vitals: List<com.example.abhayhealth.feature.vitals.VitalReadingEntity>,
+        val meds: List<com.example.abhayhealth.feature.medicines.PrescriptionMedicationEntity>,
+        val logs: List<MedicineIntakeLogEntity>,
+        val records: List<com.example.abhayhealth.feature.records.MedicalRecord>,
+        val extracted: List<com.example.abhayhealth.feature.records.ExtractedMedicalInfo>
+    )
 
     fun exportAndShareReport(context: Context) {
         performExport(context) { manager, file, patientName ->
@@ -431,6 +595,11 @@ class MeViewModel(
                     medicationDao?.deleteAllByAccount("local_user")
                     medicationDao?.deleteAllMedications()
 
+                    // Wipe medicine intake history logs
+                    medicineIntakeLogDao?.deleteAllByAccount(uid)
+                    medicineIntakeLogDao?.deleteAllByAccount("local_user")
+                    medicineIntakeLogDao?.deleteAllLogs()
+
                     // 2. Wipe vital readings
                     vitalReadingRepository?.deleteAllByAccount(uid)
                     vitalReadingRepository?.deleteAllByAccount("local_user")
@@ -463,6 +632,7 @@ class MeViewModel(
                     _recordCount.value = 0
                     _medicationCount.value = 0
                     _vitalCount.value = 0
+                    _intakeLogCount.value = 0
                     _patientProfile.value = null
                 } catch (_: Exception) {}
             }

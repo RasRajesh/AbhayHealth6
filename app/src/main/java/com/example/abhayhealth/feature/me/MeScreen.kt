@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.WarningAmber
@@ -89,6 +90,7 @@ import com.example.abhayhealth.R
 import com.example.abhayhealth.core.common.findActivity
 import com.example.abhayhealth.core.designsystem.components.AbhayHealthBrandLogo
 import com.example.abhayhealth.feature.records.export.ExportReportDialog
+import com.example.abhayhealth.feature.records.export.ShareHealthMetricsPdfDialog
 
 @Composable
 fun MeScreen(
@@ -106,9 +108,14 @@ fun MeScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val exportState by viewModel.exportState.collectAsState()
     val showExportDialog by viewModel.showExportDialog.collectAsState()
+    val showMetricsPdfDialog by viewModel.showMetricsPdfDialog.collectAsState()
+    val metricsPdfState by viewModel.metricsPdfState.collectAsState()
+    val pdfSelectedRange by viewModel.pdfSelectedRange.collectAsState()
+    val pdfPreviewCounts by viewModel.pdfPreviewCounts.collectAsState()
     val recordCount by viewModel.recordCount.collectAsState()
     val medicationCount by viewModel.medicationCount.collectAsState()
     val vitalCount by viewModel.vitalCount.collectAsState()
+    val intakeLogCount by viewModel.intakeLogCount.collectAsState()
     val appLanguage by viewModel.appLanguage.collectAsState()
     val isMedRemindersEnabled by viewModel.isMedRemindersEnabled.collectAsState()
     val isAiSummaryEnabled by viewModel.isAiSummaryEnabled.collectAsState()
@@ -157,6 +164,22 @@ fun MeScreen(
             onShareClick = { viewModel.exportAndShareReport(context) },
             onViewClick = { viewModel.exportAndViewReport(context) },
             onPrintClick = { viewModel.exportAndPrintReport(context) }
+        )
+    }
+
+    if (showMetricsPdfDialog) {
+        ShareHealthMetricsPdfDialog(
+            state = metricsPdfState,
+            selectedRange = pdfSelectedRange,
+            counts = pdfPreviewCounts,
+            onSelectRange = { viewModel.setPdfSelectedRange(it) },
+            onDismiss = { viewModel.dismissMetricsPdfDialog() },
+            onShareClick = { viewModel.shareDoctorMetricsPdf(context) },
+            onViewClick = { viewModel.viewDoctorMetricsPdf(context) },
+            onPrintClick = { viewModel.printDoctorMetricsPdf(context) },
+            onSaveToUri = { uri, onReady ->
+                viewModel.saveDoctorMetricsPdfToUri(context, uri, onReady)
+            }
         )
     }
 
@@ -1002,6 +1025,14 @@ fun MeScreen(
             ) {
                 Column {
                     ProfileMenuItem(
+                        icon = Icons.Default.PictureAsPdf,
+                        title = stringResource(id = R.string.me_item_metrics_pdf_title),
+                        subtitle = "$vitalCount vitals • $intakeLogCount doses logged",
+                        onClick = { viewModel.openMetricsPdfDialog() },
+                        modifier = Modifier.testTag("me_share_metrics_pdf_item")
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    ProfileMenuItem(
                         icon = Icons.Default.IosShare,
                         title = stringResource(id = R.string.me_item_export_title),
                         subtitle = "$recordCount reports • $medicationCount meds • $vitalCount vitals",
@@ -1136,10 +1167,11 @@ private fun ProfileMenuItem(
     icon: ImageVector,
     title: String,
     subtitle: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(16.dp),

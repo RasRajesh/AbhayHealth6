@@ -68,19 +68,42 @@ class MedicationReminderReceiver : BroadcastReceiver() {
                 val medId = intent.getStringExtra(EXTRA_MEDICATION_ID) ?: return
                 val notifId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, -1)
                 val medName = intent.getStringExtra(EXTRA_MEDICATION_NAME) ?: "Medicine"
+                val medDosage = intent.getStringExtra(EXTRA_MEDICATION_DOSAGE) ?: "1 Dose"
+                val medSlot = intent.getStringExtra(EXTRA_MEDICATION_SLOT) ?: "Scheduled Time"
 
                 if (notifId != -1) {
                     MedicationNotificationHelper.dismissNotification(context, notifId)
                 }
 
-                // Update database
+                val pendingResult = goAsync()
+                // Update schedule status + record permanent dose intake log in Room and Cloud Firestore
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         val db = MedicalRecordDatabase.getInstance(context)
                         db.medicationDao().markDoseTaken(medId)
-                        Log.d(TAG, "Marked dose as taken for medication $medId")
+                        val med = db.medicationDao().getMedicationByIdSync(medId)
+                        if (med != null && med.accountUid.isNotBlank()) {
+                            val intakeLog = MedicineIntakeLogEntity(
+                                accountUid = med.accountUid,
+                                medicationId = med.id,
+                                medicationName = med.name,
+                                dosage = med.dosage,
+                                timeSlot = med.timeSlot,
+                                takenAtTimestamp = System.currentTimeMillis(),
+                                status = MedicineIntakeLogEntity.STATUS_TAKEN,
+                                notes = "Marked taken from reminder notification"
+                            )
+                            db.medicineIntakeLogDao().insertOrUpdate(intakeLog)
+                            val firestoreRepo = com.example.abhayhealth.data.remote.FirestoreHealthRepository(context)
+                            firestoreRepo.enqueueMedication(med.copy(isTaken = true))
+                            firestoreRepo.enqueueMedicineIntakeLog(intakeLog)
+                        } else {
+                            Log.d(TAG, "Marked dose taken for medication $medId ($medName $medDosage @ $medSlot)")
+                        }
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to mark dose taken", e)
+                    } finally {
+                        pendingResult.finish()
                     }
                 }
 

@@ -6,9 +6,24 @@ import android.net.Uri
 import android.print.PrintAttributes
 import android.print.PrintManager
 import androidx.core.content.FileProvider
+import com.example.abhayhealth.data.remote.FirestoreHealthRepository
+import com.example.abhayhealth.data.remote.FirestoreHealthSnapshot
+import com.example.abhayhealth.data.remote.MedicalRecordDoc
+import com.example.abhayhealth.data.remote.MedicationDoc
+import com.example.abhayhealth.data.remote.MedicineIntakeLogDoc
+import com.example.abhayhealth.data.remote.SymptomLogDoc
+import com.example.abhayhealth.data.remote.VitalReadingDoc
+import com.example.abhayhealth.domain.model.PatientProfile
 import com.example.abhayhealth.domain.repository.PatientProfileRepository
 import com.example.abhayhealth.feature.medicines.MedicationDao
+import com.example.abhayhealth.feature.medicines.MedicineIntakeLogEntity
+import com.example.abhayhealth.feature.medicines.PrescriptionMedicationEntity
+import com.example.abhayhealth.feature.records.ExtractedMedicalInfo
+import com.example.abhayhealth.feature.records.MedicalRecord
 import com.example.abhayhealth.feature.records.MedicalRecordRepository
+import com.example.abhayhealth.feature.symptoms.SymptomLogEntity
+import com.example.abhayhealth.feature.trends.DashboardTimeRange
+import com.example.abhayhealth.feature.vitals.VitalReadingEntity
 import com.example.abhayhealth.feature.vitals.VitalReadingRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -208,6 +223,186 @@ class MedicalReportExportManager(
                     input.copyTo(out)
                 }
             } ?: throw IllegalStateException("Unable to open destination file for writing.")
+        }
+
+        suspend fun generateFirestoreMetricsPdfReport(
+            context: Context,
+            firestoreHealthRepository: FirestoreHealthRepository?,
+            userId: String,
+            timeRange: DashboardTimeRange,
+            fallbackProfile: PatientProfile? = null,
+            fallbackVitals: List<VitalReadingEntity> = emptyList(),
+            fallbackMedications: List<PrescriptionMedicationEntity> = emptyList(),
+            fallbackIntakeLogs: List<MedicineIntakeLogEntity> = emptyList(),
+            fallbackSymptoms: List<SymptomLogEntity> = emptyList(),
+            fallbackRecords: List<MedicalRecord> = emptyList(),
+            fallbackExtractedInfos: List<ExtractedMedicalInfo> = emptyList()
+        ): HealthMetricsPdfReportResult = withContext(Dispatchers.IO) {
+            val baseSnapshot = try {
+                firestoreHealthRepository?.fetchFirestoreHealthSnapshot(userId)
+            } catch (_: Exception) {
+                null
+            } ?: FirestoreHealthSnapshot(isFromCache = true)
+
+            val mergedSnapshot = mergeWithLocalFallback(
+                snapshot = baseSnapshot,
+                userId = userId,
+                fallbackVitals = fallbackVitals,
+                fallbackMedications = fallbackMedications,
+                fallbackIntakeLogs = fallbackIntakeLogs,
+                fallbackSymptoms = fallbackSymptoms,
+                fallbackRecords = fallbackRecords,
+                fallbackExtractedInfos = fallbackExtractedInfos
+            )
+
+            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+            val reportsDir = File(context.cacheDir, "reports").apply { mkdirs() }
+            val targetFile = File(reportsDir, "AbhayHealth_Doctor_Metrics_$timeStamp.pdf")
+
+            HealthMetricsPdfGenerator(context).generatePdf(
+                snapshot = mergedSnapshot,
+                timeRange = timeRange,
+                destinationFile = targetFile,
+                fallbackProfile = fallbackProfile
+            )
+        }
+
+        fun mergeWithLocalFallback(
+            snapshot: FirestoreHealthSnapshot,
+            userId: String,
+            fallbackVitals: List<VitalReadingEntity> = emptyList(),
+            fallbackMedications: List<PrescriptionMedicationEntity> = emptyList(),
+            fallbackIntakeLogs: List<MedicineIntakeLogEntity> = emptyList(),
+            fallbackSymptoms: List<SymptomLogEntity> = emptyList(),
+            fallbackRecords: List<MedicalRecord> = emptyList(),
+            fallbackExtractedInfos: List<ExtractedMedicalInfo> = emptyList()
+        ): FirestoreHealthSnapshot {
+            val vitalIds = snapshot.vitals.mapNotNull { doc ->
+                if (doc.localVitalId > 0L) doc.localVitalId else doc.id.substringAfterLast('_').toLongOrNull()
+            }.toMutableSet()
+            val mergedVitals = snapshot.vitals.toMutableList()
+            fallbackVitals.forEach { local ->
+                if (local.id <= 0L || local.id !in vitalIds) {
+                    if (local.id > 0L) vitalIds.add(local.id)
+                    mergedVitals.add(
+                        VitalReadingDoc(
+                            id = "vital_${local.id}",
+                            userId = userId,
+                            localVitalId = local.id,
+                            type = local.type,
+                            systolic = local.systolic,
+                            diastolic = local.diastolic,
+                            weightKg = local.weightKg,
+                            glucoseMgDl = local.glucoseMgDl,
+                            timestamp = local.timestamp,
+                            notes = local.notes
+                        )
+                    )
+                }
+            }
+
+            val medIds = snapshot.medications.map { it.id }.toMutableSet()
+            val mergedMeds = snapshot.medications.toMutableList()
+            fallbackMedications.forEach { local ->
+                if (local.id !in medIds) {
+                    medIds.add(local.id)
+                    mergedMeds.add(
+                        MedicationDoc(
+                            id = local.id,
+                            userId = userId,
+                            name = local.name,
+                            dosage = local.dosage,
+                            timeSlot = local.timeSlot,
+                            isTaken = local.isTaken,
+                            createdAtTimestamp = local.createdAtTimestamp
+                        )
+                    )
+                }
+            }
+
+            val logIds = snapshot.medicineIntakeLogs.map { it.id }.toMutableSet()
+            val mergedLogs = snapshot.medicineIntakeLogs.toMutableList()
+            fallbackIntakeLogs.forEach { local ->
+                if (local.id !in logIds) {
+                    logIds.add(local.id)
+                    mergedLogs.add(
+                        MedicineIntakeLogDoc(
+                            id = local.id,
+                            userId = userId,
+                            medicationId = local.medicationId,
+                            medicationName = local.medicationName,
+                            dosage = local.dosage,
+                            timeSlot = local.timeSlot,
+                            takenAtTimestamp = local.takenAtTimestamp,
+                            status = local.status,
+                            notes = local.notes
+                        )
+                    )
+                }
+            }
+
+            val symptomIds = snapshot.symptoms.mapNotNull { doc ->
+                if (doc.localSymptomId > 0L) doc.localSymptomId else doc.id.substringAfterLast('_').toLongOrNull()
+            }.toMutableSet()
+            val mergedSymptoms = snapshot.symptoms.toMutableList()
+            fallbackSymptoms.forEach { local ->
+                if (local.id <= 0L || local.id !in symptomIds) {
+                    if (local.id > 0L) symptomIds.add(local.id)
+                    mergedSymptoms.add(
+                        SymptomLogDoc(
+                            id = "symptom_${local.id}",
+                            userId = userId,
+                            localSymptomId = local.id,
+                            symptomName = local.symptomName,
+                            severity = local.severity,
+                            severityScore = local.severityScore,
+                            timestamp = local.timestamp,
+                            notes = local.notes,
+                            triggers = local.triggers,
+                            durationMinutes = local.durationMinutes
+                        )
+                    )
+                }
+            }
+
+            val recIds = snapshot.medicalRecords.mapNotNull { doc ->
+                if (doc.localRecordId > 0L) doc.localRecordId else doc.id.substringAfterLast('_').toLongOrNull()
+            }.toMutableSet()
+            val extractedMap = fallbackExtractedInfos.associateBy { it.recordId }
+            val mergedRecords = snapshot.medicalRecords.toMutableList()
+            fallbackRecords.forEach { local ->
+                if (local.id !in recIds) {
+                    recIds.add(local.id)
+                    val info = extractedMap[local.id]
+                    mergedRecords.add(
+                        MedicalRecordDoc(
+                            id = "record_${local.id}",
+                            userId = userId,
+                            localRecordId = local.id,
+                            title = local.title,
+                            category = local.category,
+                            recordDate = local.recordDate,
+                            mimeType = local.mimeType,
+                            createdAtTimestamp = local.createdAtTimestamp,
+                            documentTitle = info?.documentTitle,
+                            reportDate = info?.reportDate,
+                            rawText = info?.rawText,
+                            structuredResultsJson = info?.structuredResultsJson,
+                            reviewStatus = info?.reviewStatus ?: "UNREVIEWED",
+                            processedPages = info?.processedPages ?: 1,
+                            updatedAtTimestamp = info?.updatedAtTimestamp ?: local.createdAtTimestamp
+                        )
+                    )
+                }
+            }
+
+            return snapshot.copy(
+                vitals = mergedVitals,
+                medications = mergedMeds,
+                medicineIntakeLogs = mergedLogs,
+                symptoms = mergedSymptoms,
+                medicalRecords = mergedRecords
+            )
         }
     }
 }

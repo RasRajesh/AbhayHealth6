@@ -76,6 +76,7 @@ fun MedicinesScreen(
     modifier: Modifier = Modifier
 ) {
     val medications by viewModel.medications.collectAsState()
+    val intakeLogs by viewModel.intakeLogs.collectAsState()
     val showAddDialog by viewModel.showAddDialog.collectAsState()
     val showRemindersDialog by viewModel.showRemindersDialog.collectAsState()
     val editingMedication by viewModel.editingMedication.collectAsState()
@@ -242,9 +243,14 @@ fun MedicinesScreen(
                         items = slotMeds,
                         key = { it.id }
                     ) { med ->
+                        val loggedCount = intakeLogs.count {
+                            it.medicationId == med.id && it.status == MedicineIntakeLogEntity.STATUS_TAKEN
+                        }
                         MedicationCard(
                             medication = med,
+                            takenCount = loggedCount,
                             onToggle = { viewModel.toggleDoseTaken(med.id) },
+                            onLogTaken = { viewModel.logMedicineDoseForFuture(med) },
                             onEdit = { viewModel.openEditDialog(med) },
                             onDelete = { viewModel.removeMedication(med.id) }
                         )
@@ -252,13 +258,24 @@ fun MedicinesScreen(
                 }
             }
         }
+
+        item(key = "medicines_intake_history") {
+            Spacer(modifier = Modifier.height(4.dp))
+            MedicineIntakeHistorySection(
+                intakeLogs = intakeLogs,
+                onDeleteLog = { logId -> viewModel.deleteIntakeLog(logId) },
+                activeMedicationCount = medications.size
+            )
+        }
     }
 }
 
 @Composable
 private fun MedicationCard(
     medication: PrescriptionMedication,
+    takenCount: Int = 0,
     onToggle: () -> Unit,
+    onLogTaken: (() -> Unit)? = null,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -403,6 +420,47 @@ private fun MedicationCard(
                                 )
                             }
                         }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                ) {
+                    Text(
+                        text = if (takenCount > 0) "History: ${takenCount}x logged" else "No doses logged yet",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+
+                if (onLogTaken != null) {
+                    OutlinedButton(
+                        onClick = onLogTaken,
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        modifier = Modifier.testTag("med_log_taken_btn_${medication.id}")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(id = R.string.meds_btn_log_taken),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             }
