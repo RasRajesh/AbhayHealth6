@@ -102,13 +102,13 @@ private fun LogoIconBox(
                 spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
             ),
         shape = shape,
-        color = Color(0xFF0C3848),
+        color = Color(0xFF123C46),
         border = BorderStroke(
             width = 1.dp,
             brush = Brush.linearGradient(
                 colors = listOf(
-                    Color(0xFF2DD4BF).copy(alpha = 0.5f),
-                    Color(0xFF0C3848).copy(alpha = 0.8f)
+                    Color(0xFF16877F).copy(alpha = 0.5f),
+                    Color(0xFF123C46).copy(alpha = 0.8f)
                 )
             )
         )

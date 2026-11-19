@@ -588,7 +588,7 @@ class HealthMetricsPdfGenerator internal constructor(
         val fullName = cloudProfile?.fullName?.ifBlank { null }
             ?: fallbackProfile?.fullName?.ifBlank { null }
             ?: snapshot.userAccount?.displayName?.ifBlank { null }
-            ?: "AbhayHealth Patient"
+            ?: "JeevaSutra Patient"
         val dob = cloudProfile?.dateOfBirth?.ifBlank { null } ?: fallbackProfile?.dateOfBirth?.ifBlank { null } ?: "Not specified"
         val gender = cloudProfile?.gender?.ifBlank { null } ?: fallbackProfile?.gender?.ifBlank { null } ?: "Not specified"
         val bloodGroup = cloudProfile?.bloodGroup?.ifBlank { null } ?: fallbackProfile?.bloodGroup?.ifBlank { null } ?: "Unknown"
@@ -1128,7 +1128,7 @@ class HealthMetricsPdfGenerator internal constructor(
         canvas.drawLine(MARGIN_LEFT, MARGIN_BOTTOM + 6f, MARGIN_RIGHT, MARGIN_BOTTOM + 6f, borderPaint)
         val sourceNote = if (isFromCache) "Offline Cached Firestore Snapshot" else "Cloud Firestore Synchronized Summary"
         canvas.drawText(
-            "AbhayHealth Confidential Doctor Summary • $sourceNote",
+            "JeevaSutra Confidential Doctor Summary • $sourceNote",
             MARGIN_LEFT,
             MARGIN_BOTTOM + 20f,
             footerPaint

@@ -4,24 +4,28 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- AbhayHealth Healthcare Shield & Cross -->
-    <!-- Outer Shield Contour -->
+    <!-- JeevaSutra Emblem: Lotus + Human Figure + Flowing Sutra Ribbon -->
+
+    <!-- Outer Lotus Petals (Left & Right - Soft Mint & Warm White) -->
     <path
-        android:fillColor="#E7F5F2"
-        android:pathData="M54,26 C66,26 76,30 76,30 C76,54 68,68 54,78 C40,68 32,54 32,30 C32,30 42,26 54,26 Z" />
-    <!-- Inner Cross Vertical Line -->
+        android:fillColor="#DDF4EF"
+        android:pathData="M54,42 C40,48 30,62 30,76 C42,76 50,68 54,60 C58,68 66,76 78,76 C78,62 68,48 54,42 Z" />
+
+    <!-- Center Lotus Core & Patient Human Figure Base (Vibrant Teal #16877F) -->
     <path
-        android:fillColor="#123B50"
-        android:pathData="M50,38 h8 v24 h-8 z" />
-    <!-- Inner Cross Horizontal Line -->
+        android:fillColor="#16877F"
+        android:pathData="M54,34 C48,46 44,60 44,78 C50,80 58,80 64,78 C64,60 60,46 54,34 Z" />
+
+    <!-- Human Figure Head (Subtle Gold #D4AF37) -->
     <path
-        android:fillColor="#123B50"
-        android:pathData="M42,46 h24 v8 h-24 z" />
-    <!-- Heartbeat Accent Pulse Line -->
+        android:fillColor="#D4AF37"
+        android:pathData="M54,26 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
+
+    <!-- Flowing Sutra Ribbon (Golden & Mint Connected Thread) -->
     <path
-        android:strokeColor="#16A6A1"
-        android:strokeWidth="2.5"
+        android:strokeColor="#D4AF37"
+        android:strokeWidth="3"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M38,50 L46,50 L49,43 L52,57 L55,47 L58,50 L68,50" />
+        android:pathData="M28,60 C36,46 54,52 64,48 C74,44 80,56 72,66 C64,76 44,70 34,74 C26,78 34,84 48,84 L60,84" />
 </vector>

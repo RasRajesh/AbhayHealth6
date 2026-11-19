@@ -32,6 +32,11 @@ abstract class FirestoreEmulatorTestBase {
 
     @Before
     open fun setUpFirebase() {
+        org.junit.Assume.assumeTrue(
+            "Firebase Auth / Firestore emulator is not running on 127.0.0.1:$AUTH_PORT / $FIRESTORE_PORT",
+            isEmulatorAvailable(EMULATOR_HOST, AUTH_PORT) && isEmulatorAvailable(EMULATOR_HOST, FIRESTORE_PORT)
+        )
+
         val context = ApplicationProvider.getApplicationContext<Context>()
         // Dynamically resolve named database ID from firebase_applet_config.xml string resources
         val resId = context.resources.getIdentifier("firestore_database_id", "string", context.packageName)
@@ -66,8 +71,9 @@ abstract class FirestoreEmulatorTestBase {
 
     @After
     open fun tearDownFirebase() {
-        // Only sign out; never invoke app.delete() which destroys the process-wide singleton
-        auth.signOut()
+        if (::auth.isInitialized) {
+            runCatching { auth.signOut() }
+        }
     }
 
     // Local unit test helper ONLY (under app/src/test/). In application code (app/src/main/),
@@ -104,5 +110,16 @@ abstract class FirestoreEmulatorTestBase {
         const val PROJECT_ID = "demo-no-project"
         const val DEFAULT_PASSWORD = "password123"
         const val AUTH_TIMEOUT_MS = 5000L
+
+        private fun isEmulatorAvailable(host: String, port: Int): Boolean {
+            return try {
+                java.net.Socket().use { socket ->
+                    socket.connect(java.net.InetSocketAddress(host, port), 500)
+                    true
+                }
+            } catch (_: Exception) {
+                false
+            }
+        }
     }
 }

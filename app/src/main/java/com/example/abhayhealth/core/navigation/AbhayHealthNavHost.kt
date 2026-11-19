@@ -57,6 +57,17 @@ fun AbhayHealthNavHost(
     navController: NavHostController = rememberNavController()
 ) {
     val authState by authViewModel.authState.collectAsState()
+    val otpUiState by authViewModel.otpUiState.collectAsState()
+
+    // Observe OTP state to auto-navigate to 6-digit OTP verification screen when code is sent
+    LaunchedEffect(otpUiState.isOtpSent) {
+        if (otpUiState.isOtpSent) {
+            val currentRoute = navController.currentDestination?.route
+            if (currentRoute == NavRoutes.ENTER_PHONE || currentRoute == NavRoutes.ONBOARDING || currentRoute == NavRoutes.WELCOME) {
+                navController.navigate(NavRoutes.VERIFY_OTP)
+            }
+        }
+    }
 
     // Observe global authentication state for seamless navigation transitions
     LaunchedEffect(authState) {

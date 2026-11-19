@@ -1,40 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- AbhayHealth Official Brand Emblem: Dark Slate Teal Base + Glowing Ring + Shield + Cross + Vital Heartbeat Pulse -->
-    <!-- Base Rounded Background -->
+    <!-- JeevaSutra Official Brand Emblem: Deep Teal Base + Lotus + Human Figure + Flowing Sutra Ribbon -->
+
+    <!-- Deep Teal Base Background (#123C46) -->
     <path
-        android:fillColor="#0D3B4C"
+        android:fillColor="#123C46"
         android:pathData="M0,0h108v108h-108z" />
 
-    <!-- Ambient Glowing Circle (Jade/Teal Accent) -->
+    <!-- Ambient Glowing Circle (Vibrant Teal #16877F) -->
     <path
-        android:fillColor="#14B8A6"
-        android:fillAlpha="0.22"
+        android:fillColor="#16877F"
+        android:fillAlpha="0.30"
         android:pathData="M54,16 C74.987,16 92,33.013 92,54 C92,74.987 74.987,92 54,92 C33.013,92 16,74.987 16,54 C16,33.013 33.013,16 54,16 Z" />
 
-    <!-- Protective Outer Shield Contour (Soft Pearl White) -->
+    <!-- Outer Lotus Petals (Soft Mint #DDF4EF) -->
     <path
-        android:fillColor="#F0FDF4"
-        android:pathData="M54,26 C66,26 76,30 76,30 C76,54 68,68 54,78 C40,68 32,54 32,30 C32,30 42,26 54,26 Z" />
+        android:fillColor="#DDF4EF"
+        android:pathData="M54,42 C40,48 30,62 30,76 C42,76 50,68 54,60 C58,68 66,76 78,76 C78,62 68,48 54,42 Z" />
 
-    <!-- Inner Medical Cross Vertical Stem -->
+    <!-- Center Lotus Core & Patient Body (Vibrant Teal #16877F) -->
     <path
-        android:fillColor="#0D3B4C"
-        android:pathData="M50,38 h8 v24 h-8 z" />
+        android:fillColor="#16877F"
+        android:pathData="M54,34 C48,46 44,60 44,78 C50,80 58,80 64,78 C64,60 60,46 54,34 Z" />
 
-    <!-- Inner Medical Cross Horizontal Bar -->
+    <!-- Human Figure Head (Subtle Gold #D4AF37) -->
     <path
-        android:fillColor="#0D3B4C"
-        android:pathData="M42,46 h24 v8 h-24 z" />
+        android:fillColor="#D4AF37"
+        android:pathData="M54,26 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
 
-    <!-- Continuous Vital Heartbeat Pulse Line -->
+    <!-- Flowing Sutra Ribbon (Golden Thread #D4AF37) -->
     <path
-        android:strokeColor="#0D9488"
-        android:strokeWidth="2.8"
+        android:strokeColor="#D4AF37"
+        android:strokeWidth="3"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M38,50 L46,50 L49,43 L52,57 L55,47 L58,50 L68,50" />
+        android:pathData="M28,60 C36,46 54,52 64,48 C74,44 80,56 72,66 C64,76 44,70 34,74 C26,78 34,84 48,84 L60,84" />
 </vector>

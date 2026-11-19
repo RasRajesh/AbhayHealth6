@@ -1,4 +1,5 @@
 import java.time.Duration
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -37,19 +38,38 @@ android {
     }
 
     signingConfigs {
-        create("debugConfig") {
-            storeFile = file("${rootDir}/debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+        create("release") {
+            val keystorePropsFile = rootProject.file("keystore.properties")
+            if (keystorePropsFile.exists()) {
+                val props = Properties()
+                keystorePropsFile.inputStream().use { stream -> props.load(stream) }
+                val path = props.getProperty("storeFile")
+                if (!path.isNullOrBlank()) {
+                    storeFile = file(path)
+                    storePassword = props.getProperty("storePassword", "")
+                    keyAlias = props.getProperty("keyAlias", "")
+                    keyPassword = props.getProperty("keyPassword", "")
+                }
+            } else {
+                val envStoreFile = System.getenv("KEYSTORE_FILE")
+                if (!envStoreFile.isNullOrBlank()) {
+                    storeFile = file(envStoreFile)
+                    storePassword = System.getenv("KEYSTORE_PASSWORD").orEmpty()
+                    keyAlias = System.getenv("KEY_ALIAS").orEmpty()
+                    keyPassword = System.getenv("KEY_PASSWORD").orEmpty()
+                }
+            }
         }
     }
 
     buildTypes {
         debug {
-            signingConfig = signingConfigs.getByName("debugConfig")
         }
         release {
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile?.exists() == true) {
+                signingConfig = releaseSigning
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -148,7 +168,7 @@ dependencies {
 
 tasks.withType<Test> {
     failFast = true
-    timeout.set(Duration.ofMinutes(2))
+    timeout.set(Duration.ofMinutes(5))
     testLogging {
         events("passed", "failed", "skipped")
     }

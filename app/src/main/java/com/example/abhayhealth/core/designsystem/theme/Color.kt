@@ -3,22 +3,27 @@ package com.example.abhayhealth.core.designsystem.theme
 import androidx.compose.ui.graphics.Color
 
 // =========================================================================
-// AbhayHealth Ultra-Premium Healthcare Color Palette
-// Deep Slate Teal (Clinical Trust & Security)
-// Radiant Jade & Emerald Mint (Vitality, Healing & Clean Modernism)
-// Coral Terracotta (Thoughtful Clinical Highlights & Warnings)
+// JeevaSutra Healthcare Brand Color Palette
+// Primary: Deep Teal #123C46 (Clinical Trust & Security)
+// Secondary: Vibrant Teal #16877F (Vitality & Flowing Sutra)
+// Background: Warm White #F4F8F7 (Clean Modern Canvas)
+// Accent: Soft Mint #DDF4EF (Life & Wellbeing Lotus)
+// Gold: Subtle Gold #D4AF37 (Connected Journey Thread)
 // =========================================================================
 
-// --- Light Scheme Tokens ---
-val PrimaryDeepTeal = Color(0xFF0C3848)           // Luxurious slate-navy teal
+// --- JeevaSutra Light Scheme Tokens ---
+val PrimaryDeepTeal = Color(0xFF123C46)           // Deep Teal brand identity
 val OnPrimaryTeal = Color(0xFFFFFFFF)
-val PrimaryContainerMint = Color(0xFFE2F4F2)      // Silky frosted mint tint
-val OnPrimaryContainerMint = Color(0xFF063A45)
+val PrimaryContainerMint = Color(0xFFDDF4EF)      // Soft Mint container
+val OnPrimaryContainerMint = Color(0xFF0C2B32)
 
-val SecondaryTeal = Color(0xFF0D9488)             // Vibrant clinical emerald teal
+val SecondaryTeal = Color(0xFF16877F)             // Vibrant Teal
 val OnSecondaryTeal = Color(0xFFFFFFFF)
-val SecondaryContainerSoft = Color(0xFFD6F5EE)    // Subtle jade container
-val OnSecondaryContainerSoft = Color(0xFF054742)
+val SecondaryContainerSoft = Color(0xFFDDF4EF)    // Soft Mint container
+val OnSecondaryContainerSoft = Color(0xFF0A3B37)
+
+val GoldAccent = Color(0xFFD4AF37)                 // Subtle Gold accent thread
+val OnGoldAccent = Color(0xFFFFFFFF)
 
 val TertiaryCoral = Color(0xFFD97706)             // Warm clinical amber accent
 val OnTertiaryCoral = Color(0xFFFFFFFF)
@@ -35,24 +40,24 @@ val OnErrorRed = Color(0xFFFFFFFF)
 val ErrorContainerRed = Color(0xFFFFE4E6)
 val OnErrorContainerRed = Color(0xFF881337)
 
-val WarmWhiteBackground = Color(0xFFF7FAF9)      // Crisp porcelain white-teal background
+val WarmWhiteBackground = Color(0xFFF4F8F7)      // JeevaSutra Warm White background
 val OnWarmWhiteBackground = Color(0xFF0F172A)
-val SurfaceWhite = Color(0xFFFFFFFF)             // Pure elevated white surface
+val SurfaceWhite = Color(0xFFFFFFFF)             // Elevated white surface
 val OnSurfaceWhite = Color(0xFF0F172A)
-val SurfaceVariantSoft = Color(0xFFE8F1F1)        // Soft muted mist
-val OnSurfaceVariantDark = Color(0xFF475569)     // Readable balanced slate
-val OutlineTeal = Color(0xFF94A3B8)              // Refined border outline
-val OutlineVariantTeal = Color(0xFFE2E8F0)       // Ultra-soft subtle border
+val SurfaceVariantSoft = Color(0xFFE5F1EE)        // Soft mint mist
+val OnSurfaceVariantDark = Color(0xFF334155)     // Readable balanced slate
+val OutlineTeal = Color(0xFF94A3B8)              // Muted border outline
+val OutlineVariantTeal = Color(0xFFCBD5E1)       // Subtle border
 
-// --- Dark Scheme Tokens ---
+// --- JeevaSutra Dark Scheme Tokens ---
 val PrimaryTealDark = Color(0xFF38BDF8)
 val OnPrimaryTealDark = Color(0xFF032B3A)
-val PrimaryContainerTealDark = Color(0xFF0C3848)
-val OnPrimaryContainerTealDark = Color(0xFFE2F4F2)
+val PrimaryContainerTealDark = Color(0xFF123C46)
+val OnPrimaryContainerTealDark = Color(0xFFDDF4EF)
 
 val SecondaryTealDark = Color(0xFF2DD4BF)
 val OnSecondaryTealDark = Color(0xFF003735)
-val SecondaryContainerTealDark = Color(0xFF0D9488)
+val SecondaryContainerTealDark = Color(0xFF16877F)
 val OnSecondaryContainerTealDark = Color(0xFFCCFBF1)
 
 val ErrorRedDark = Color(0xFFFB7185)
@@ -62,7 +67,7 @@ val OnErrorContainerRedDark = Color(0xFFFFE4E6)
 
 val BackgroundSlateDark = Color(0xFF091419)       // Deep twilight slate
 val OnBackgroundSlateDark = Color(0xFFF1F5F9)
-val SurfaceSlateDark = Color(0xFF11222C)          // Smooth dark card surface
+val SurfaceSlateDark = Color(0xFF11222C)          // Dark card surface
 val OnSurfaceSlateDark = Color(0xFFF1F5F9)
 val SurfaceVariantSlateDark = Color(0xFF1E333F)
 val OnSurfaceVariantSlateDark = Color(0xFFCBD5E1)

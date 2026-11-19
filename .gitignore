@@ -11,6 +11,8 @@
 local.properties
 .build-outputs/
 *.keystore
+*.jks
+keystore.properties
 debug.keystore*
 *.zip
 *diagnostic*.txt

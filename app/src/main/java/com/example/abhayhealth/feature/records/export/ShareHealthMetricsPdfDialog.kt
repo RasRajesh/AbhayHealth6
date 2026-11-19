@@ -77,7 +77,7 @@ fun ShareHealthMetricsPdfDialog(
 ) {
     val context = LocalContext.current
     val savedToastMsg = stringResource(id = R.string.metrics_pdf_saved_toast)
-    val defaultFileName = "AbhayHealth_Doctor_Progress_${
+    val defaultFileName = "JeevaSutra_Doctor_Progress_${
         SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())
     }.pdf"
 

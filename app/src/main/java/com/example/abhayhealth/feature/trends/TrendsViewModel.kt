@@ -447,8 +447,8 @@ class TrendsViewModel(
             MedicalReportExportManager.sharePdfFile(
                 context = context,
                 file = result.file,
-                subject = "AbhayHealth Doctor Progress Summary",
-                message = "Sharing Firestore health metrics (Blood Pressure, Glucose, Weight) & medicine intake history from AbhayHealth.",
+                subject = "JeevaSutra Doctor Progress Summary",
+                message = "Sharing Firestore health metrics (Blood Pressure, Glucose, Weight) & medicine intake history from JeevaSutra.",
                 chooserTitle = "Share Progress PDF with Doctor"
             )
         }

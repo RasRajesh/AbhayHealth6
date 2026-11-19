@@ -67,7 +67,7 @@ object LabSummaryDataBuilder {
         generatedAt: Long = System.currentTimeMillis()
     ): MedicalReportPdfGenerator.LabSummaryReportData {
         val narrative = executiveSummary.englishText.ifBlank {
-            "Processed clinical laboratory report summary generated from AbhayHealth local records."
+            "Processed clinical laboratory report summary generated from JeevaSutra local records."
         }
         val entries = buildLabReportEntries(
             selectedReportId = selectedReport.id,

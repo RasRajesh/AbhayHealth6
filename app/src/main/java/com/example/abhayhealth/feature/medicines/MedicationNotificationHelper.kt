@@ -105,7 +105,7 @@ object MedicationNotificationHelper {
             .setStyle(
                 NotificationCompat.BigTextStyle()
                     .bigText("Time to take your scheduled medicine:\n\n• Medicine: $name\n• Dosage: $dosage\n• Schedule: $timeSlot\n\nPlease take it with water as prescribed.")
-                    .setSummaryText("AbhayHealth Medication")
+                    .setSummaryText("JeevaSutra Medication")
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)

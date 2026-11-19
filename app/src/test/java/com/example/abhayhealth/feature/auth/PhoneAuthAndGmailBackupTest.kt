@@ -5,6 +5,7 @@ import com.example.abhayhealth.domain.model.PhoneOtpUiState
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuthException
+import kotlinx.coroutines.flow.asStateFlow
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -83,5 +84,57 @@ class PhoneAuthAndGmailBackupTest {
         val missingClientId = FirebaseAuthException("ERROR_MISSING_CLIENT_IDENTIFIER", "Client validation failed")
         val clientMsg = FirebaseAuthRepository.formatPhoneAuthError(missingClientId)
         assertThat(clientMsg).contains("reCAPTCHA Enterprise")
+    }
+
+    @Test
+    fun authViewModel_delegatesOtpAndStateActionsCorrectly() {
+        val fakeRepo = FakeAuthRepository()
+        val viewModel = AuthViewModel(fakeRepo)
+
+        assertThat(viewModel.authState.value).isEqualTo(com.example.abhayhealth.domain.model.AuthState.Unauthenticated)
+
+        viewModel.sendPhoneOtp(null, "9876543210")
+        assertThat(fakeRepo.lastSentPhone).isEqualTo("9876543210")
+
+        viewModel.verifyPhoneOtp("123456")
+        assertThat(fakeRepo.lastVerifiedCode).isEqualTo("123456")
+
+        viewModel.cancelPhoneOtp()
+        assertThat(fakeRepo.cancelCalled).isTrue()
+    }
+
+    private class FakeAuthRepository : com.example.abhayhealth.domain.repository.AuthRepository {
+        private val _authState = kotlinx.coroutines.flow.MutableStateFlow<com.example.abhayhealth.domain.model.AuthState>(
+            com.example.abhayhealth.domain.model.AuthState.Unauthenticated
+        )
+        override val authState = _authState.asStateFlow()
+
+        private val _otpUiState = kotlinx.coroutines.flow.MutableStateFlow(PhoneOtpUiState())
+        override val otpUiState = _otpUiState.asStateFlow()
+
+        override val currentUser = null
+        override val isAuthenticated = false
+
+        var lastSentPhone: String? = null
+        var lastVerifiedCode: String? = null
+        var cancelCalled = false
+
+        override fun sendPhoneOtp(activity: android.app.Activity?, tenDigitPhone: String) {
+            lastSentPhone = tenDigitPhone
+        }
+
+        override fun verifyPhoneOtp(otpCode: String) {
+            lastVerifiedCode = otpCode
+        }
+
+        override fun resendPhoneOtp(activity: android.app.Activity?) {}
+        override fun cancelPhoneOtp() { cancelCalled = true }
+        override fun clearOtpError() {}
+        override suspend fun attemptAutoSignIn(activityContext: android.content.Context) {}
+        override suspend fun signInWithGoogle(activityContext: android.content.Context) {}
+        override suspend fun linkGmailAccount(activityContext: android.content.Context): Result<String> = Result.success("test@gmail.com")
+        override fun clearError() {}
+        override fun signOut() {}
+        override fun deleteAccount(onComplete: (Boolean, String?) -> Unit) { onComplete(true, null) }
     }
 }

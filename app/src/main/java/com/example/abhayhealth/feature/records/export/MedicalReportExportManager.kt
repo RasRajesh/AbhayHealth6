@@ -97,7 +97,7 @@ class MedicalReportExportManager(
 
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val reportsDir = File(context.cacheDir, "reports").apply { mkdirs() }
-        val targetFile = File(reportsDir, "AbhayHealth_Medical_Summary_$timeStamp.pdf")
+        val targetFile = File(reportsDir, "JeevaSutra_Medical_Summary_$timeStamp.pdf")
 
         generator.generatePdfReport(reportData, targetFile)
     }
@@ -109,7 +109,7 @@ class MedicalReportExportManager(
             context = context,
             file = file,
             subject = "Medical Summary & Medication Schedule - $patientName",
-            message = "Sharing verified medical history, active medications, and vital logs from AbhayHealth for $patientName.",
+            message = "Sharing verified medical history, active medications, and vital logs from JeevaSutra for $patientName.",
             chooserTitle = "Share Medical Report with Doctor / Provider"
         )
     }
@@ -122,7 +122,7 @@ class MedicalReportExportManager(
     ) {
         val uri = getReportUri(context, file)
         val cleanRecipient = targetGmail?.trim()?.takeIf { it.isNotEmpty() }
-        val subject = "AbhayHealth Cloud & PDF Backup - $patientName"
+        val subject = "JeevaSutra Cloud & PDF Backup - $patientName"
 
         val baseIntent = Intent(Intent.ACTION_SEND).apply {
             type = "application/pdf"
@@ -143,7 +143,7 @@ class MedicalReportExportManager(
         try {
             context.startActivity(gmailIntent)
         } catch (_: Exception) {
-            val chooser = Intent.createChooser(baseIntent, "Upload AbhayHealth Backup to Gmail").apply {
+            val chooser = Intent.createChooser(baseIntent, "Upload JeevaSutra Backup to Gmail").apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(chooser)
@@ -208,7 +208,7 @@ class MedicalReportExportManager(
                 val printManager = context.getSystemService(Context.PRINT_SERVICE) as? PrintManager
                 if (printManager != null) {
                     val printAdapter = PdfPrintDocumentAdapter(file)
-                    printManager.print("AbhayHealth_Medical_Report", printAdapter, PrintAttributes.Builder().build())
+                    printManager.print("JeevaSutra_Medical_Report", printAdapter, PrintAttributes.Builder().build())
                 } else {
                     viewPdfFile(context, file)
                 }
@@ -257,7 +257,7 @@ class MedicalReportExportManager(
 
             val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
             val reportsDir = File(context.cacheDir, "reports").apply { mkdirs() }
-            val targetFile = File(reportsDir, "AbhayHealth_Doctor_Metrics_$timeStamp.pdf")
+            val targetFile = File(reportsDir, "JeevaSutra_Doctor_Metrics_$timeStamp.pdf")
 
             HealthMetricsPdfGenerator(context).generatePdf(
                 snapshot = mergedSnapshot,

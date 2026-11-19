@@ -304,7 +304,7 @@ class MeViewModel(
 
                     val resolvedName = profile?.fullName?.ifBlank { null } ?: "Patient"
                     val summary = buildString {
-                        appendLine("AbhayHealth Personal Health Backup")
+                        appendLine("JeevaSutra Personal Health Backup")
                         appendLine("Patient: $resolvedName")
                         user.phoneNumber?.takeIf { it.isNotBlank() }?.let {
                             appendLine("Verified Mobile: $it")
@@ -325,7 +325,7 @@ class MeViewModel(
                             appendLine("- Allergies: $it")
                         }
                         appendLine()
-                        appendLine("Attached: Complete clinical PDF report synced with your AbhayHealth vault.")
+                        appendLine("Attached: Complete clinical PDF report synced with your JeevaSutra vault.")
                     }
                     resolvedName to summary
                 }
@@ -435,8 +435,8 @@ class MeViewModel(
             MedicalReportExportManager.sharePdfFile(
                 context = context,
                 file = result.file,
-                subject = "AbhayHealth Doctor Progress Summary",
-                message = "Sharing Firestore health metrics (Blood Pressure, Glucose, Weight) & medicine intake history from AbhayHealth.",
+                subject = "JeevaSutra Doctor Progress Summary",
+                message = "Sharing Firestore health metrics (Blood Pressure, Glucose, Weight) & medicine intake history from JeevaSutra.",
                 chooserTitle = "Share Progress PDF with Doctor"
             )
         }

@@ -260,9 +260,9 @@ class AiAssistantViewModel(
     private fun initConversation(lang: String) {
         val isTe = lang == "Telugu"
         val greetingText = if (isTe) {
-            "నమస్కారం! నేను మీ AbhayHealth AI ఆరోగ్య సహాయకుడిని. మీరు మొత్తం ఆరోగ్య సారాంశాన్ని లేదా పైన ఉన్న డ్రాప్‌డౌన్ ద్వారా నిర్దిష్ట ల్యాబ్ రిపోర్టును ఎంచుకుని పరిశీలించవచ్చు. ఆడియో స్పీకర్ బటన్ నొక్కి సారాంశాన్ని వినవచ్చు!"
+            "నమస్కారం! నేను మీ JeevaSutra AI ఆరోగ్య సహాయకుడిని. మీరు మొత్తం ఆరోగ్య సారాంశాన్ని లేదా పైన ఉన్న డ్రాప్‌డౌన్ ద్వారా నిర్దిష్ట ల్యాబ్ రిపోర్టును ఎంచుకుని పరిశీలించవచ్చు. ఆడియో స్పీకర్ బటన్ నొక్కి సారాంశాన్ని వినవచ్చు!"
         } else {
-            "Hello! I am your AbhayHealth AI Health Assistant. You can analyze your overall health or use the dropdown above to focus on specific uploaded lab reports. Tap the Speaker icon anytime to listen to the clinical brief!"
+            "Hello! I am your JeevaSutra AI Health Assistant. You can analyze your overall health or use the dropdown above to focus on specific uploaded lab reports. Tap the Speaker icon anytime to listen to the clinical brief!"
         }
 
         val suggestions = if (isTe) {
@@ -617,7 +617,7 @@ class AiAssistantViewModel(
 
     fun suggestedLabPdfFileName(): String {
         val stamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.US).format(Date())
-        return "AbhayHealth_Lab_Summary_$stamp.pdf"
+        return "JeevaSutra_Lab_Summary_$stamp.pdf"
     }
 
     internal fun buildLabReportEntries(): List<MedicalReportPdfGenerator.LabReportEntry> {
@@ -645,7 +645,7 @@ class AiAssistantViewModel(
                 context = appContext,
                 file = file,
                 subject = "Processed Lab Data Summary - $patientName",
-                message = "Sharing formatted processed laboratory summary report from AbhayHealth for $patientName.",
+                message = "Sharing formatted processed laboratory summary report from JeevaSutra for $patientName.",
                 chooserTitle = "Share Lab Summary PDF"
             )
         }
@@ -973,7 +973,7 @@ class AiAssistantViewModel(
         recentHistory: List<AiChatMessage>
     ): String {
         val sb = StringBuilder()
-        sb.appendLine("You are AbhayHealth's clinical health assistant helping a patient understand their personal medical records, medications, and vital telemetry.")
+        sb.appendLine("You are JeevaSutra's clinical health assistant helping a patient understand their personal medical records, medications, and vital telemetry.")
         sb.appendLine("Guidelines:")
         sb.appendLine("- Reply strictly in ${if (isTelugu) "Telugu (తెలుగు)" else "English"}.")
         sb.appendLine("- Ground every numerical claim strictly in the patient data below; clearly state if a specific measurement is not recorded.")

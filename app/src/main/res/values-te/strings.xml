@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">AbhayHealth</string>
-    <string name="app_tagline">మీ ఆరోగ్య ప్రయాణం, సురక్షితంగా అనుసంధానించబడింది.</string>
+    <string name="app_name">JeevaSutra</string>
+    <string name="app_tagline">మీ ఆరోగ్య ప్రయాణాన్ని అనుసంధానించే సూత్రం.</string>
 
     <!-- Navigation Labels -->
     <string name="nav_home">హోమ్</string>
@@ -14,8 +14,8 @@
     <string name="splash_loading">మీ సురక్షిత ఆరోగ్య వాతావరణం సిద్ధమవుతోంది…</string>
 
     <!-- Onboarding Screen -->
-    <string name="onboarding_welcome">అభయ్ హెల్త్‌కు స్వాగతం</string>
-    <string name="onboarding_subtitle">మీ ఆరోగ్య ప్రయాణం, సురక్షితంగా అనుసంధానించబడింది.</string>
+    <string name="onboarding_welcome">జీవసూత్రకు స్వాగతం</string>
+    <string name="onboarding_subtitle">మీ ఆరోగ్య ప్రయాణాన్ని అనుసంధానించే సూత్రం.</string>
     <string name="onboarding_feat_records_title">అమర్చబడిన వైద్య రికార్డులు</string>
     <string name="onboarding_feat_records_desc">మీ వైద్య నివేదికలు, స్కాన్లు మరియు ల్యాబ్ ఫలితాలను మీ ఫోన్‌లో సురక్షితంగా భద్రపరచండి.</string>
     <string name="onboarding_feat_meds_title">మందులు &amp; ప్రిస్క్రిప్షన్ ట్రాకర్</string>
@@ -27,7 +27,7 @@
     <string name="onboarding_get_started">ప్రారంభించండి</string>
 
     <!-- Welcome / Account Entry Screen -->
-    <string name="welcome_title">అభయ్ హెల్త్‌లోకి సైన్ ఇన్ చేయండి</string>
+    <string name="welcome_title">జీవసూత్రలోకి సైన్ ఇన్ చేయండి</string>
     <string name="welcome_desc">మీ +91 మొబైల్ నంబర్ &amp; OTP తో మొదటిసారి సైన్ ఇన్ అవ్వండి. మీ ఆరోగ్య సమాచారం సురక్షితంగా సింక్ అవుతుంది.</string>
     <string name="welcome_btn_continue">Google తో కొనసాగండి</string>
     <string name="welcome_btn_continue_optional">Gmail తో కొనసాగండి (ఐచ్ఛికం)</string>

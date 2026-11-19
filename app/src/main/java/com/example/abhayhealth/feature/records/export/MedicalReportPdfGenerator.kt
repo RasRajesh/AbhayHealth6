@@ -1054,7 +1054,7 @@ class MedicalReportPdfGenerator(private val context: Context) {
         canvas.drawLine(MARGIN_LEFT, y - 6f, MARGIN_RIGHT, y - 6f, borderPaint)
 
         canvas.drawText(
-            "AbhayHealth Personal Health Record (PHR) • Confidential • Local-First Architecture",
+            "JeevaSutra Personal Health Record (PHR) • Confidential • Local-First Architecture",
             MARGIN_LEFT,
             y + 6f,
             footerPaint
