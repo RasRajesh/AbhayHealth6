@@ -22,7 +22,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AbhayHealth"
+        android:theme="@style/Theme.JeevaSutra"
         tools:targetApi="35">
 
         <!-- ML Kit On-Device OCR model declaration -->
@@ -33,7 +33,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.AbhayHealth"
+            android:theme="@style/Theme.JeevaSutra"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

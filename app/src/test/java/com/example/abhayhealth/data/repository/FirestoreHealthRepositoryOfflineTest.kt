@@ -27,7 +27,7 @@ class FirestoreHealthRepositoryOfflineTest : FirestoreEmulatorTestBase() {
         val secondaryApp = FirebaseApp.initializeApp(
             context,
             FirebaseOptions.Builder()
-                .setApplicationId("in.abhayhealth.app")
+                .setApplicationId("in.jeevasutra.app")
                 .setProjectId("demo-no-project")
                 .setApiKey("fake-api-key-for-emulator")
                 .build(),

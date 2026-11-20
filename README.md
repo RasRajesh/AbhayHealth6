@@ -1,12 +1,12 @@
-# AbhayHealth – Your Health Journey, Connected.
+# JeevaSutra – Your Health Journey, Connected.
 
-**AbhayHealth** is a patient-first, hospital-ready, ABDM-ready mobile application designed to empower individuals and families—starting with Telugu-speaking families in Telangana and Andhra Pradesh—to securely track, manage, and understand their health records.
+**JeevaSutra** is a patient-first, hospital-ready, ABDM-ready mobile application designed to empower individuals and families—starting with Telugu-speaking families in Telangana and Andhra Pradesh—to securely track, manage, and understand their health records.
 
 ---
 
 ## 1. Executive Summary & Core Philosophy
 
-- **Application ID:** `in.abhayhealth.app`
+- **Application ID:** `in.jeevasutra.app`
 - **Firebase Project ID:** `abhayhealth-a8e0d`
 - **Target Audience:** Telugu and English speaking users requiring personal health management, document extraction, medication reminders, and health trend analytics.
 - **Local-First Data Architecture:** Patient health records, prescriptions, extracted lab metrics, vitals, symptom logs, and medication schedules reside strictly on-device inside a secure Room SQLite database. Medical documents and personal health records are **NEVER uploaded to Firebase or cloud servers**.
@@ -17,7 +17,7 @@
 ## 2. System Architecture & Tech Stack
 
 ```
-AbhayHealth App (in.abhayhealth.app)
+JeevaSutra App (in.jeevasutra.app)
 │
 ├── UI & Navigation Layer (Jetpack Compose & Navigation)
 │   ├── Auth Flow: EnterPhoneScreen ──> VerifyOtpScreen (Firebase SMS OTP)
@@ -53,7 +53,7 @@ AbhayHealth App (in.abhayhealth.app)
 ## 4. Local-First Health Data Privacy & Security
 
 > [!IMPORTANT]
-> **Data Privacy Guarantee:** AbhayHealth does not transmit medical documents, prescription images, lab values, or personal health records to cloud servers. All document classification, OCR extraction, vitals tracking, and trend analysis are performed 100% on-device.
+> **Data Privacy Guarantee:** JeevaSutra does not transmit medical documents, prescription images, lab values, or personal health records to cloud servers. All document classification, OCR extraction, vitals tracking, and trend analysis are performed 100% on-device.
 
 - **Storage Engine:** Android Room Database (`MedicalRecordDatabase.db`).
 - **Account Isolation:** All database tables filter queries using the active `accountUid`.
@@ -120,17 +120,17 @@ To ensure real-time SMS delivery on production physical devices:
    - Navigate to [Firebase Console](https://console.firebase.google.com/u/0/project/abhayhealth-a8e0d/authentication/providers).
    - Under **Sign-in method**, verify **Phone** provider is **Enabled**.
 2. **SHA-1 & SHA-256 Fingerprints:**
-   - Under **Project Settings > General > Your Apps (`in.abhayhealth.app`)**, add:
+   - Under **Project Settings > General > Your Apps (`in.jeevasutra.app`)**, add:
      - Development SHA-1 / SHA-256 fingerprints.
      - Google Play App Signing SHA-1 / SHA-256 fingerprints (from Play Console).
 3. **App Check & Integrity:**
-   - Enable **Play Integrity** or **reCAPTCHA Enterprise** provider under Firebase App Check for `in.abhayhealth.app`.
+   - Enable **Play Integrity** or **reCAPTCHA Enterprise** provider under Firebase App Check for `in.jeevasutra.app`.
 
 ---
 
 ## 8. Google Play Store Release Checklist
 
-- [x] Application ID verified as `in.abhayhealth.app`.
+- [x] Application ID verified as `in.jeevasutra.app`.
 - [x] `compileSdk = 36`, `targetSdk = 36`, `minSdk = 26`.
 - [x] ProGuard rules enabled for release shrinking (`isMinifyEnabled = true`, `isShrinkResources = true`).
 - [x] Automated test suite verified (all unit tests passing).

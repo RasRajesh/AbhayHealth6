@@ -62,7 +62,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:562150970620:android:7780a60bbe1a1f4e3af379",
         "android_client_info": {
-          "package_name": "in.abhayhealth.app"
+          "package_name": "in.jeevasutra.app"
         }
       },
       "oauth_client": [
@@ -70,7 +70,7 @@
           "client_id": "562150970620-bibm87elcctv1veqvoe3hl0488hp86p5.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "in.abhayhealth.app",
+            "package_name": "in.jeevasutra.app",
             "certificate_hash": "15e41a9275f3b07b1a7bac2cee30bcdb45b9a58b"
           }
         },

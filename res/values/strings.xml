@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">AbhayHealth</string>
+    <string name="app_name">JeevaSutra</string>
     <string name="app_tagline">Your Health Journey, Connected.</string>
 
     <!-- Navigation Labels -->
@@ -13,7 +13,7 @@
     <string name="splash_loading">Initializing your secure health environment…</string>
 
     <!-- Onboarding Screen -->
-    <string name="onboarding_welcome">Welcome to AbhayHealth</string>
+    <string name="onboarding_welcome">Welcome to JeevaSutra</string>
     <string name="onboarding_subtitle">Your Health Journey, Connected.</string>
     <string name="onboarding_feat_records_title">Organized Medical Records</string>
     <string name="onboarding_feat_records_desc">Keep your medical reports, scans, and lab results structured in one local-first application.</string>
@@ -26,7 +26,7 @@
     <string name="onboarding_get_started">Get Started</string>
 
     <!-- Welcome / Account Entry Screen -->
-    <string name="welcome_title">Sign in to AbhayHealth</string>
+    <string name="welcome_title">Sign in to JeevaSutra</string>
     <string name="welcome_desc">Secure account access via mobile OTP. Your medical records remain stored locally on your device.</string>
     <string name="welcome_btn_continue">Continue with Mobile Number</string>
     <string name="welcome_privacy_notice">🔒 Account authentication verifies your mobile identity. Your personal health documents, medical records, and prescriptions remain 100% stored on your device.</string>
@@ -173,7 +173,7 @@
     <string name="export_report_success">Medical report generated successfully!</string>
     <string name="export_report_error">Failed to generate PDF report. Please try again.</string>
     <string name="export_report_dialog_header">Doctor Clinical Summary Report</string>
-    <string name="export_report_dialog_body">This generates an official AbhayHealth Medical Summary including your profile, active prescriptions, recent vitals, and diagnostic lab results formatted for physician review.</string>
+    <string name="export_report_dialog_body">This generates an official JeevaSutra Medical Summary including your profile, active prescriptions, recent vitals, and diagnostic lab results formatted for physician review.</string>
 
     <!-- Symptom Tracking & Logging Strings -->
     <string name="trends_tab_symptoms">Symptoms</string>

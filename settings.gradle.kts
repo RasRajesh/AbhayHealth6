@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AbhayHealth"
+rootProject.name = "JeevaSutra"
 include(":app")

@@ -7,7 +7,7 @@ import android.util.Log
  * Ensures personal health records, credentials, or sensitive patient details are never written to logcat.
  */
 object SecurityAudit {
-    private const val TAG = "AbhayHealth_Audit"
+    private const val TAG = "JeevaSutra_Audit"
     
     // Set to false in production builds
     private const val IS_DEBUG_LOGGING_ALLOWED = false

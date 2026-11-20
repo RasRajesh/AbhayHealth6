@@ -13,7 +13,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "in.abhayhealth.app"
+        applicationId = "in.jeevasutra.app"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
