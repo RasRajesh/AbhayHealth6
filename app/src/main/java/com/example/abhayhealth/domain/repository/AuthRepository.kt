@@ -25,6 +25,7 @@ interface AuthRepository {
 
     suspend fun attemptAutoSignIn(activityContext: Context)
     suspend fun signInWithGoogle(activityContext: Context)
+    fun signInDirectly()
     suspend fun linkGmailAccount(activityContext: Context): Result<String>
     fun clearError()
     fun signOut()

@@ -142,6 +142,7 @@ class MedicinesIntakeHistoryTest {
         override fun clearOtpError() {}
         override suspend fun attemptAutoSignIn(activityContext: Context) {}
         override suspend fun signInWithGoogle(activityContext: Context) {}
+        override fun signInDirectly() {}
         override suspend fun linkGmailAccount(activityContext: Context): Result<String> =
             Result.failure(UnsupportedOperationException())
         override fun clearError() {}

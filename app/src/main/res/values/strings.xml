@@ -31,6 +31,8 @@
     <string name="welcome_desc">Sign in once with your +91 mobile number &amp; OTP. Your health vault stays signed in and synced.</string>
     <string name="welcome_btn_continue">Continue with Google</string>
     <string name="welcome_btn_continue_optional">Continue with Gmail (Optional)</string>
+    <string name="auth_btn_direct_login">⚡ Direct Login (Testing Mode)</string>
+    <string name="auth_direct_login_hint">Skip phone &amp; Gmail verification for direct testing access.</string>
     <string name="auth_or_optional">OR (Optional)</string>
     <string name="auth_gmail_optional_hint">Gmail is optional. You can add or link your Gmail anytime inside the Me tab to upload and back up your health data.</string>
     <string name="welcome_privacy_notice" formatted="false">🔒 First-time OTP verification • Protected by Firebase App Check &amp; private sync</string>

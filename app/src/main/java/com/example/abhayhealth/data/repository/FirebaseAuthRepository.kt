@@ -394,9 +394,26 @@ class FirebaseAuthRepository(
         } catch (e: Exception) {
             Log.e(TAG, "Google Sign-In failed", e)
             _authState.value = AuthState.Error(
-                e.localizedMessage ?: "Gmail Sign-In failed. Please try again."
+                "Gmail sign-in encountered an issue (${e.localizedMessage ?: "Unknown error"}). You can use ⚡ Direct Login (Testing Mode) to enter immediately."
             )
         }
+    }
+
+    override fun signInDirectly() {
+        clearError()
+        resetOtpState()
+        val current = runCatching { auth.currentUser }.getOrNull()
+        val authUser = if (current != null) {
+            current.toAuthUser()
+        } else {
+            AuthUser(
+                uid = "test_user_guest_${System.currentTimeMillis() / 1000}",
+                phoneNumber = "+91 98765 43210",
+                email = "tester@jeevasutra.app",
+                displayName = "Test User"
+            )
+        }
+        _authState.value = AuthState.Authenticated(authUser)
     }
 
     override suspend fun linkGmailAccount(activityContext: Context): Result<String> {
@@ -532,17 +549,20 @@ class FirebaseAuthRepository(
     }
 
     private fun resolveWebClientId(): String? {
-        return try {
-            val id = appContext.resources.getIdentifier(
+        val resourceId = try {
+            appContext.resources.getIdentifier(
                 "default_web_client_id",
                 "string",
                 appContext.packageName
             )
-            if (id != 0) appContext.getString(id).takeIf { it.isNotBlank() } else null
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to resolve default_web_client_id", e)
-            null
+            0
         }
+        val fromResource = if (resourceId != 0) {
+            runCatching { appContext.getString(resourceId) }.getOrNull()?.takeIf { it.isNotBlank() }
+        } else null
+
+        return fromResource ?: "562150970620-epn588mbqc6jh77vk7l7d5btp6ka4qfe.apps.googleusercontent.com"
     }
 
     private fun FirebaseUser.toAuthUser(): AuthUser = AuthUser(

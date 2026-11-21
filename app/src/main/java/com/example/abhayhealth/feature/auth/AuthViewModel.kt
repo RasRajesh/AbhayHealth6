@@ -49,6 +49,10 @@ class AuthViewModel(
         }
     }
 
+    fun signInDirectly() {
+        authRepository.signInDirectly()
+    }
+
     fun clearError() {
         authRepository.clearError()
     }

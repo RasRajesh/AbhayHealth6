@@ -101,6 +101,9 @@ class PhoneAuthAndGmailBackupTest {
 
         viewModel.cancelPhoneOtp()
         assertThat(fakeRepo.cancelCalled).isTrue()
+
+        viewModel.signInDirectly()
+        assertThat(viewModel.authState.value).isInstanceOf(com.example.abhayhealth.domain.model.AuthState.Authenticated::class.java)
     }
 
     private class FakeAuthRepository : com.example.abhayhealth.domain.repository.AuthRepository {
@@ -132,6 +135,11 @@ class PhoneAuthAndGmailBackupTest {
         override fun clearOtpError() {}
         override suspend fun attemptAutoSignIn(activityContext: android.content.Context) {}
         override suspend fun signInWithGoogle(activityContext: android.content.Context) {}
+        override fun signInDirectly() {
+            _authState.value = com.example.abhayhealth.domain.model.AuthState.Authenticated(
+                com.example.abhayhealth.domain.model.AuthUser(uid = "test_direct_uid", phoneNumber = "+919876543210")
+            )
+        }
         override suspend fun linkGmailAccount(activityContext: android.content.Context): Result<String> = Result.success("test@gmail.com")
         override fun clearError() {}
         override fun signOut() {}

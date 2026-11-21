@@ -31,6 +31,8 @@
     <string name="welcome_desc">మీ +91 మొబైల్ నంబర్ &amp; OTP తో మొదటిసారి సైన్ ఇన్ అవ్వండి. మీ ఆరోగ్య సమాచారం సురక్షితంగా సింక్ అవుతుంది.</string>
     <string name="welcome_btn_continue">Google తో కొనసాగండి</string>
     <string name="welcome_btn_continue_optional">Gmail తో కొనసాగండి (ఐచ్ఛికం)</string>
+    <string name="auth_btn_direct_login">⚡ ప్రత్యక్ష లాగిన్ (పరీక్షా విధానం)</string>
+    <string name="auth_direct_login_hint">పరీక్షించడాని కై మొబైల్ నంబర్ మరియు Gmail అవసరం లేదు.</string>
     <string name="auth_or_optional">లేదా (ఐచ్ఛికం)</string>
     <string name="auth_gmail_optional_hint">Gmail ఐచ్ఛికం. మీ ఆరోగ్య డేటాను Gmail కు అప్‌లోడ్ చేయడానికి యాప్ లోపల ఎప్పుడైనా జోడించవచ్చు.</string>
     <string name="welcome_privacy_notice" formatted="false">🔒 మొదటిసారి OTP ధృవీకరణ • Firebase App Check &amp; ప్రైవేట్ సింక్ రక్షణ</string>
